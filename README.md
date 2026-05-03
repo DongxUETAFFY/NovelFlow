@@ -1,198 +1,200 @@
 # NovelFlow
 
-AI 长篇小说写作框架。针对一个核心痛点设计：**AI 写长篇时上下文太长，写到后面忘了前面的设定和大纲。**
+An AI novel-writing framework that solves one core problem: **AI forgets earlier plot and character details when writing long novels due to context window limits.**
 
-解决方案：把你模糊的想法先梳理成结构化大纲和人设，再按章节分段生成。每次写作时自动注入大纲摘要、角色卡和金字塔压缩的前文摘要——100 章的小说，上下文开销控制在 ~9000 tokens。
+The solution: transform scattered ideas into structured outlines and character profiles first, then generate chapter by chapter. Each writing session injects the outline summary, compressed character cards, and pyramid-compressed prior-chapter summaries — keeping context overhead at ~9,000 tokens even for 100-chapter novels.
 
-虽然目前以 Claude Code Skill 的形式打包，但核心是一套 Markdown 工作流——**不绑定 Claude Code**，任何支持读写的 AI 工具都能用。
+Packaged as Claude Code Skills, but the core is a Markdown-based workflow — **not locked to Claude Code**. Works with any AI tool that can read and write files.
 
-## 解决的问题
+## Problem & Solution
 
-| 没有 NovelFlow 时 | 有了 NovelFlow 之后 |
-|------------------|-------------------|
-| 写了一万字，AI 忘了主角叫什么 | 每章注入压缩角色卡，核心设定永远在上下文中 |
-| 对话越来越长，后面的章节敷衍了事 | 金字塔压缩前文，近详远略，每章上下文始终干净 |
-| 写到一半人设崩了，情节矛盾 | 自动审稿：人名、时间线、世界观逐项检查 |
-| 大纲全凭记性，写了 20 章之后大纲已经不存在了 | 大纲和章节状态写在文件里，agent 每次读 |
+| Without NovelFlow | With NovelFlow |
+|-------------------|----------------|
+| 10,000 words in, the AI forgets the protagonist's name | Compressed character cards injected every chapter — core details always in context |
+| Dialogue drags, later chapters feel phoned in | Pyramid-compressed summaries: recent chapters detailed, older ones condensed — context stays clean |
+| Character voice drifts, plot contradictions pile up | Auto-review checks names, timeline, and world-building consistency every chapter |
+| Outline exists only in memory — by chapter 20, it's gone | Outline and chapter status live in files, read fresh every session |
 
-## 两步工作流
+## Two-Step Workflow
 
-**第一步：从模糊想法到结构化大纲。** 你说「我想写一个赛博朋克悬疑，主角失忆了」，AI 会批量提问帮你理清类型、视角、人物、世界观、篇幅。确认后生成完整的章节大纲、人设和世界观文件。
+**Step 1 — From scattered ideas to structured plan.** Say "I want to write a cyberpunk mystery where the protagonist has amnesia." The AI asks batched questions to clarify genre, POV, characters, world-building, and scope. Once confirmed, it generates a complete chapter outline, character profiles, and world bible.
 
-**第二步：分段写作。** 基于确认后的大纲，AI 一章一章写。每章写完自己检查有没有写错人名、违反设定，然后停下来等你反馈。你可以说「继续」写下一章，「全部写完」一口气出草稿，或者对某章提修改意见。
+**Step 2 — Segmented writing.** Based on the confirmed outline, the AI writes one chapter at a time. After each chapter, it self-reviews for name errors and setting violations, then pauses for your feedback. Say "continue" for the next chapter, "write all" to batch the rest, or give specific revision notes.
 
-## 安装
+## Installation
 
 ```bash
 git clone https://github.com/DongxUETAFFY/NovelFlow.git
 mkdir -p ~/.claude/skills && cp -r NovelFlow/skills/* ~/.claude/skills/
 ```
 
-重启 Claude Code。
+Restart Claude Code.
 
 ---
 
-## 两个 Skill
+## Skills
 
-### `novel-setup` — 从碎片想法到结构化设定
+### `novel-setup` — From Fragments to Structured Plan
 
-**什么时候触发：** 用户说「我想写小说」「帮我构思一本小说」，或者给了一段零散的故事想法。
+**Triggers when:** the user says "I want to write a novel," "help me plan a story," or shares a rough story idea.
 
-**做什么：** 通过一次结构化提问（不逐个审问），把用户模糊的创意梳理成：
+**What it does:** Through one batched question session (not sequential interrogation), it structures your ideas into:
 
-| 产出文件 | 内容 |
-|---------|------|
-| `novel/context-brief.md` | 压缩版系统提示词——premise + 角色卡摘要 + 章节状态表。任何 agent 第一个读的文件 |
-| `novel/outline.md` | 完整章节大纲，含三幕结构、关键转折点、每章的情节点 |
-| `novel/characters.md` | 人物设定——公开形象（读者看到的）vs 隐藏深度（暗线，逐步揭示） |
-| `novel/world.md` | 世界观圣经（奇幻/科幻需要时生成，现实题材跳过） |
-| `novel/progress.md` | 写作统计——字数、日期、审阅笔记、伏笔追踪表 |
-| `novel/summaries.md` | 章节摘要（初始为空，由 novel-write 逐步填充） |
+| Output File | Content |
+|------------|---------|
+| `novel/context-brief.md` | Compressed system prompt — premise + character card summaries + chapter status table. First file any agent reads |
+| `novel/outline.md` | Complete chapter-by-chapter outline with three-act structure, key turning points, per-chapter plot beats |
+| `novel/characters.md` | Character profiles — public persona (what readers see) vs hidden depths (slowly revealed subtext) |
+| `novel/world.md` | World bible (generated for fantasy/sci-fi; skipped for realistic fiction) |
+| `novel/progress.md` | Writing stats — word counts, dates, review notes, foreshadowing tracker |
+| `novel/summaries.md` | Chapter summaries (initialized empty, filled by novel-write) |
 
-**流程：** 用户输入零散想法 → AI 批量提问（一次问完 7 个维度）→ 整理为结构化大纲 → **等用户确认** → 生成文件 → 主动问「要不要开始写第一章？」
+**Flow:** User shares scattered ideas → AI asks batched questions (7 dimensions, all at once) → synthesizes structured outline → **waits for user confirmation** → generates files → asks "Want to start chapter 1?"
 
-如果当前目录已有小说项目，会先检测 `context-brief.md`，问「修改设定 / 开新书 / 继续写」。
-
----
-
-### `novel-write` — 分段撰写 + 防遗忘 + 审稿
-
-**什么时候触发：** 用户说「开始写」「继续」「写下一章」「全部写完」「review」。
-
-**三种模式：**
-
-| 模式 | 触发词 | 行为 |
-|------|--------|------|
-| 交互模式（默认） | 「开始写」「继续」 | 写一章 → 展示摘要 → **停下来等用户反馈** → 用户说继续才写下一章。用户可随时提修改意见 |
-| 全自动模式 | 「全部写完」「一口气」 | 连续写完所有剩余章节，每 5 章汇报进度。发现严重矛盾（P2）暂停问用户 |
-| 审阅模式 | 「review」「审阅」 | 读取上一章，逐项检查人物名/时间线/世界观一致性，返回修改建议 |
-
-**每章的执行流程（Plan → Execute → Review）：**
-
-```
-Step 0: 读 context-brief.md 恢复状态（premise + 角色卡 + 写到哪了）
-Step 1: 按金字塔压缩组装上下文（下详）
-Step 2: 内部规划——本章结构、角色节拍、文风匹配
-Step 3: 撰写完整章节
-Step 4: 自审——P0 自动修（错字/名字/时态），P1 修并记录，P2 标记给作者
-Step 5: 更新文件——正文 + 摘要 + 进度 + context-brief 状态
-Step 6: 停下来展示摘要，等用户反馈
-```
-
-**写完第 5/10/15 章时提醒：** 「已写 N 章，对话上下文已累积较多。建议下次开新对话从第 N+1 章继续」。
+If an existing novel project is detected, it reads `context-brief.md` and asks: "Edit settings / Start new book / Continue writing."
 
 ---
 
-## 核心机制：金字塔上下文压缩
+### `novel-write` — Segmented Writing + Anti-Forgetting + Review
 
-长篇小说最大的问题是上下文窗口装不下。NovelFlow 的解法：
+**Triggers when:** the user says "start writing," "continue," "next chapter," "write all," or "review."
+
+**Three modes:**
+
+| Mode | Trigger | Behavior |
+|------|---------|----------|
+| Interactive (default) | "start," "continue" | Write one chapter → show summary → **pause for feedback** → wait for user before next chapter |
+| Full-auto | "write all," "batch" | Write all remaining chapters continuously, report progress every 5 chapters. Pause only on serious contradictions (P2) |
+| Review | "review" | Read previous chapter, check names/timeline/world-building consistency, return revision suggestions |
+
+**Per-chapter execution (Plan → Execute → Review):**
 
 ```
-写第 20 章时的上下文结构：
+Step 0: Read context-brief.md to restore state (premise + character cards + current position)
+Step 1: Assemble context using pyramid compression (details below)
+Step 2: Internal plan — chapter structure, character beats, voice matching
+Step 3: Write the complete chapter
+Step 4: Self-review — P0 auto-fix (typos/names/tense), P1 fix & log, P2 flag for author
+Step 5: Update files — chapter text + summary + progress + context-brief status
+Step 6: Pause, show summary, wait for feedback
+```
+
+**Reminder at chapters 5/10/15:** "N chapters written. Conversation context is accumulating. Consider starting a new conversation from chapter N+1."
+
+---
+
+## Core Mechanism: Pyramid Context Compression
+
+The fundamental challenge of long-form novel writing is that the full text won't fit in any model's context window. NovelFlow's approach:
+
+```
+Context structure when writing Chapter 20:
 
 ┌─────────────────────────────────┐
-│ Foundation（每次注入，~2,000t）    │
-│ premise + 角色卡 + 当前章大纲       │  ← 来自 context-brief.md
+│ Foundation (injected every time, ~2,000t)    │
+│ premise + character cards + current chapter outline  │  ← from context-brief.md
 ├─────────────────────────────────┤
-│ Voice Anchor（~5,000t）          │
-│ 第 19 章全文                     │  ← 保持文风连续性
+│ Voice Anchor (~5,000t)          │
+│ Chapter 19 full text            │  ← maintains prose continuity
 ├─────────────────────────────────┤
-│ 金字塔摘要                        │
-│ 第 17-18 章：完整摘要 (~700t)     │  ← 近详
-│ 第 14-16 章：前 100 字 (~400t)   │
-│ 第 10-13 章：前 50 字 (~270t)    │
-│ 第 1-9 章：一句话 (~230t)        │  ← 远略
+│ Pyramid Summaries                │
+│ Ch 17-18: full summaries (~700t)│  ← near: detailed
+│ Ch 14-16: first 100 words (~400t)│
+│ Ch 10-13: first 50 words (~270t) │
+│ Ch 1-9: one sentence each (~230t)│  ← far: condensed
 ├─────────────────────────────────┤
-│ 总计 ~8,900 tokens 开销          │  ← 100 章规模也适用
+│ Total: ~8,900 tokens overhead   │  ← scales to 100+ chapters
 └─────────────────────────────────┘
 ```
 
+The pyramid ensures every chapter is represented — recent ones in detail, older ones as compressed anchors. This prevents the model from forgetting early plot threads while keeping context usage predictable.
+
 ---
 
-## 完整工作流
+## Full Workflow
 
 ```
-用户说「我想写小说」
+User says "I want to write a novel"
 
-    ↓ novel-setup 启动
-  输入零散想法（一句话也行，一堆碎片也行）
+    ↓ novel-setup starts
+  Input scattered ideas (one sentence or a wall of text)
     ↓
-  AI 批量提问（7 个维度，一次问完）
+  AI asks batched questions (7 dimensions, all at once)
     ↓
-  用户回答
+  User answers
     ↓
-  AI 整理结构化大纲 → 给用户看
+  AI synthesizes structured outline → shows to user
     ↓
-  用户说「可以」→ 生成 novel/ 目录
+  User says "looks good" → generates novel/ directory
     ↓
-  AI 问「要开始写第一章吗？」
+  AI asks "Start chapter 1?"
     ↓
-  用户说「开始写」→ novel-write 启动
+  User says "start" → novel-write begins
     ↓
   ┌──────────────────────────────┐
-  │  写第一章                     │
-  │  → 自审                      │
-  │  → 更新摘要 + 进度             │
-  │  → 展示摘要：                 │
-  │   「第 1 章完成。继续还是调整？」│
+  │  Write Chapter 1              │
+  │  → Self-review                │
+  │  → Update summaries + progress│
+  │  → Show summary:              │
+  │   "Chapter 1 done. Continue?" │
   └──────────────────────────────┘
     ↓
-  用户说「继续」
+  User says "continue"
     ↓
   ┌──────────────────────────────┐
-  │  写第二章                     │
-  │  上下文包含：大纲 + 第一章全文   │
-  │  + 角色卡 + 第一章摘要         │
-  │  → 自审 → 更新 → 等反馈       │
+  │  Write Chapter 2              │
+  │  Context: outline + Ch1 full  │
+  │  text + character cards       │
+  │  → Review → Update → Pause    │
   └──────────────────────────────┘
     ↓
-  用户说「全部写完」
+  User says "write all"
     ↓
   ┌──────────────────────────────┐
-  │  连续写第 3-80 章              │
-  │  每 5 章汇报进度               │
-  │  P2 矛盾暂停问                │
-  │  写完展示总结报告              │
+  │  Write Chapters 3-80          │
+  │  Progress report every 5 ch   │
+  │  Pause on P2 contradictions   │
+  │  Final summary report         │
   └──────────────────────────────┘
 ```
 
 ---
 
-## 渐进式加载（防上下文挤爆）
+## Progressive Loading (Context Protection)
 
-| 层级 | 何时加载 | 内容 | 大小 |
-|------|---------|------|------|
-| L1 | 会话启动 | skill name + description | ~50 词 |
-| L2 | skill 被调用时 | SKILL.md 骨架 | ~80-180 行 |
-| L3 | 执行具体步骤时 | references（提问模板、压缩算法、写作指南、审稿清单） | 按需 |
-| 项目入口 | 每次写作第一个读 | `novel/context-brief.md` | ~100 行 |
-
----
-
-## 跨会话恢复
-
-不依赖 Claude Code Memory 或任何平台机制。进度全在文件里：
-
-- `novel/context-brief.md`：80 章状态表，哪个 planned、哪个 draft、哪个 reviewed
-- `novel/summaries.md`：每章完整摘要
-- `novel/progress.md`：字数、日期、审阅笔记
-
-下次回来，AI 读 context-brief.md：「欢迎回来。已完成 12 章，下一章是第 13 章。继续还是调整？」
+| Level | When Loaded | Content | Size |
+|-------|-------------|---------|------|
+| L1 | Session start | Skill name + description | ~50 words |
+| L2 | Skill invoked | SKILL.md body | ~80-180 lines |
+| L3 | During execution | References (question templates, compression algorithm, writing guide, review checklist) | On demand |
+| Project entry | First read per session | `novel/context-brief.md` | ~100 lines |
 
 ---
 
-## 在其他平台使用
+## Cross-Session Resume
 
-NovelFlow 的核心不是代码，是一套 Markdown 工作流 + 指令文件。不捆绑 Claude Code。
+No dependency on Claude Code Memory or any platform mechanism. All state lives in files:
 
-- **Cursor / Codex / OpenCode**：支持 agentskills.io 标准，直接把 `skills/` 丢进对应目录即可
-- **自己搭建的 agent**：把 `SKILL.md` 当 system prompt 注入，告诉 agent 先读 `novel/context-brief.md` 开始工作。`references/` 下的指令文件按需传给 LLM
-- **ChatGPT / Claude Chat**：手动粘入 `context-brief.md` + 上一章全文 + 当前章大纲，说「写这一章」。审稿清单可以粘进去让 AI 自查
-- **换成其他推理模型**：整个工作流是 Markdown 指令 + 文件读写，不依赖特定模型能力
+- `novel/context-brief.md` — chapter status table (planned / draft / reviewed) for all chapters
+- `novel/summaries.md` — per-chapter summaries
+- `novel/progress.md` — word counts, dates, review notes
+
+On next session, the AI reads `context-brief.md` and says: "Welcome back. 12 chapters completed. Next is Chapter 13. Continue or adjust?"
 
 ---
 
-## 卸载
+## Using With Other Platforms
+
+NovelFlow's core is not code — it's a Markdown workflow + instruction files. Not locked to Claude Code.
+
+- **Cursor / Codex / OpenCode** — supports the agentskills.io standard; drop `skills/` into the corresponding directory
+- **Custom agents** — inject `SKILL.md` as system prompt, tell the agent to start by reading `novel/context-brief.md`. Feed reference files on demand
+- **ChatGPT / Claude Chat** — manually paste `context-brief.md` + previous chapter full text + current chapter outline, say "write this chapter." Paste the review checklist for self-review
+- **Other reasoning models** — the entire workflow is Markdown instructions + file I/O, no model-specific features required
+
+---
+
+## Uninstall
 
 ```bash
 rm -rf ~/.claude/skills/novel-setup ~/.claude/skills/novel-write
@@ -203,3 +205,7 @@ rm -rf ~/.claude/skills/novel-setup ~/.claude/skills/novel-write
 ## License
 
 MIT
+
+---
+
+[中文文档](README_CN.md)
