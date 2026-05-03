@@ -1,0 +1,13 @@
+# Claude Code local config (contains API keys)
+.claude/
+
+# User's novel projects (creative content, not part of the skill)
+novel/
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Environment
+.env
+.env.local
