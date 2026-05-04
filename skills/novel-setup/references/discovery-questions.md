@@ -1,6 +1,6 @@
 # Structured Discovery Questions
 
-Ask these questions as a **single batched message** (don't interrogate one at a time). Adapt wording to what the user already told you. Skip any question the user has already answered.
+Ask these questions as a **single batched message** — don't interrogate one at a time. Adapt wording to what the user already told you. Skip any question the user has already answered.
 
 ## Core Questions
 

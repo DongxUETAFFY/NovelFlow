@@ -1,5 +1,15 @@
 # Pyramid Context Compression Guide
 
+- [Purpose](#purpose)
+- [The Five Tiers](#the-five-tiers)
+- [Foundation Block (Always Included)](#foundation-block-always-included)
+- [Voice Anchor (Chapter C-1 Full Text)](#voice-anchor-chapter-c-1-full-text)
+- [Tier Compression Algorithm](#tier-compression-algorithm)
+- [Context Assembly Order](#context-assembly-order)
+- [Importance Overrides (Judgment Calls)](#importance-overrides-judgment-calls)
+- [Edge Cases](#edge-cases)
+- [Token Budget Estimate](#token-budget-estimate)
+
 ## Purpose
 
 When writing chapter C of a novel, you need context from all previous chapters — but you can't include all of them in full. This guide defines the compression algorithm: the farther back a chapter is, the more aggressively it's compressed.
@@ -24,7 +34,8 @@ Extract from the project files:
 1. **Premise** — from `novel/outline.md`, the one-sentence premise
 2. **Genre & POV** — from the outline header
 3. **Character Cards** — from `novel/characters.md`, condensed: name, role, 3 key traits, current arc status (where they are in their journey at this point in the novel)
-4. **Outline Context** — from `novel/outline.md`, the table rows for:
+4. **Dynamic State** — from `novel/story-state.md`, only the current pressure, relevant character rows, active open threads, continuity locks, and relationship shifts for this chapter
+5. **Outline Context** — from `novel/outline.md`, the table rows for:
    - Chapter C-1 (where we just were)
    - Chapter C (what we're writing now)
    - Chapter C+1 (where we're going next)
@@ -63,15 +74,43 @@ Assemble in this order for the generation prompt:
 
 1. Foundation (premise, genre, POV)
 2. Character cards (all characters, condensed)
-3. Outline context (C-1, C, C+1)
-4. Tier 5: Distant one-liners (ch 1 → C-11, chronological)
-5. Tier 4: Compressed summaries (ch C-10 → C-7, chronological)
-6. Tier 3: Moderate summaries (ch C-6 → C-4, chronological)
-7. Tier 2: Detailed summaries (ch C-3 → C-2, chronological)
-8. Voice Anchor: Full text of chapter C-1
-9. Writing instruction for chapter C
+3. Dynamic state from story-state.md
+4. Outline context (C-1, C, C+1)
+5. Tier 5: Distant one-liners (ch 1 → C-11, chronological)
+6. Tier 4: Compressed summaries (ch C-10 → C-7, chronological)
+7. Tier 3: Moderate summaries (ch C-6 → C-4, chronological)
+8. Tier 2: Detailed summaries (ch C-3 → C-2, chronological)
+9. Voice Anchor: Full text of chapter C-1
+10. Writing instruction for chapter C
 
 This chronological-then-reverse-proximity order creates a natural narrative flow that builds toward the current moment.
+
+## Importance Overrides (Judgment Calls)
+
+The distance-based algorithm above is the default. But some chapters carry narrative weight disproportionate to their position. Apply these overrides when appropriate:
+
+### Promotion Rules
+
+A chapter can be promoted **one tier higher** than its distance would normally get if it contains:
+
+- A major revelation that recontextualizes earlier events (readers AND the AI need to remember this)
+- A character death or irreversible transformation that affects all subsequent chapters
+- The introduction of a rule, object, or relationship that will be critical in the climax
+- A chapter explicitly marked as `revelation`, `death`, or `climax` in the outline's Milestone column
+
+**How to apply**: If Chapter 12 (normally Tier 5, one-liner) contains a revelation that defines the second half of the novel, promote it to Tier 4 (first 50 words) or even Tier 3 (first 100 words) if it's foundational.
+
+### Demotion Rule
+
+A chapter can be demoted **one tier** if it is a pure transitional chapter (travel, recovery, regrouping) with no character development, no plot advancement, and no new information. These chapters exist for rhythm — their summaries don't need detail at long range.
+
+### Budgeting Overrides
+
+Promotions consume extra tokens. The total overhead budget target is ~9,000 tokens. If you promote a chapter, compensate by demoting another chapter of equal or lesser narrative weight. The budget is a guideline, not a straitjacket — but stay within ~10% of it.
+
+**Default stance**: Use distance-based compression. Override only when a chapter's narrative significance clearly differs from what its position suggests.
+
+---
 
 ## Edge Cases
 

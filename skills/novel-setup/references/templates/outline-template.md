@@ -15,9 +15,22 @@
 
 ## Chapter-by-Chapter Outline
 
-| Ch | Title | POV Char | Scene Summary | Key Events | Word Target |
-|----|-------|----------|---------------|------------|-------------|
+| Ch | Title | POV Char | Scene Summary | Key Events | Word Target | Milestone |
+|----|-------|----------|---------------|------------|-------------|-----------|
 {{CHAPTER_ROWS}}
+
+**Milestone values** (mark at least these; a chapter can have only one):
+- `normal` — standard chapter (default)
+- `inciting-incident` — the event that pushes the protagonist into the story
+- `midpoint` — the story's midpoint twist or reversal
+- `darkest-moment` — the all-is-lost beat
+- `climax` — the final confrontation or resolution
+- `death` — a major character death
+- `reunion` — major reunion, separation, or farewell
+- `revelation` — major plot twist or truth revealed
+- `act-break` — transition between acts
+
+Milestone chapters are subject to **milestone protection** during writing: they must receive at least 2 fully-developed scenes, must not be shorter than the novel's average chapter length, and must have above-average sensory density.
 
 ---
 

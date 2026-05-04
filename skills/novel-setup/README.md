@@ -1,52 +1,53 @@
 # novel-setup
 
-从零散的小说想法出发，通过对话梳理出结构化大纲、人物设定和世界观。
+Interactive story discovery and structured novel planning. Transforms scattered ideas into chapter outlines, character profiles, and world-building files.
 
-## 安装
-
-复制整个 `novel-setup/` 目录到 `~/.claude/skills/`：
+## Install
 
 ```bash
 cp -r novel-setup ~/.claude/skills/
 ```
 
-无需重启，下一个对话即可使用。
+## Usage
 
-## 使用
+Share your story idea — a sentence, a scene, a character, a vibe. The AI asks batched questions to clarify genre, POV, protagonist, antagonist, plot structure, world-building, and scope. After confirmation, it generates a complete `novel/` project directory with built-in validation.
 
-```
-/novel-setup
-```
+## 6-Phase Flow
 
-然后输入你的故事想法——可以是一句话、一个场景、一个角色、一种氛围。AI 会通过结构化提问帮你把模糊的想法变成：
+| Phase | Description |
+|-------|-------------|
+| 0 — Detect | Check for existing project; offer edit / new / continue |
+| 1 — Capture | Absorb raw ideas (never fabricate) |
+| 2 — Discover | Batched questions (7 dimensions, all at once) |
+| 3 — Synthesize | Structured summary → iterate until confirmed |
+| 4 — Generate | Create all 8 project files from templates |
+| 5 — Validate | Cross-check consistency across all files |
+| 6 — Handoff | Offer to start Chapter 1 immediately |
 
-- 章节大纲（含三幕结构、关键转折点）
-- 人物设定（外显人格 + 隐藏深度 + 人物弧线）
-- 世界观设定（可选，奇幻/科幻需要时生成）
-
-最终在当前目录创建 `novel/` 目录存放所有产出文件。
-
-## 产出
+## Output
 
 ```
 novel/
-├── outline.md       # 章节大纲
-├── characters.md    # 人物设定
-├── world.md         # 世界观（可选）
-├── progress.md      # 写作进度追踪
-├── summaries.md     # 章节摘要（由 novel-write 填充）
-└── chapters/        # 章节正文（由 novel-write 填充）
+├── context-brief.md   # Compressed entry point (single source of truth)
+├── outline.md         # Chapter outline with Milestone column
+├── characters.md      # Public Persona vs Hidden Depths profiles
+├── world.md           # World bible (conditional — only for invented settings)
+├── progress.md        # Stats, foreshadowing tracker, revision log
+├── story-state.md     # Dynamic continuity memory and current narrative pressure
+├── summaries.md       # Chapter summaries (filled by novel-write)
+└── chapters/          # Chapter files (written by novel-write)
 ```
 
-## 依赖
+## Progressive Loading
 
-- 无外部依赖
-- 产物被 `novel-write` 消费
+| Level | Content | When |
+|-------|---------|------|
+| L1 | name + description | Session start |
+| L2 | SKILL.md (146 lines) | Skill invoked |
+| L3 | references/discovery-questions.md | Phase 2 |
+| L3 | references/file-generation.md | Phase 4 |
+| L3 | references/templates/* | Phase 4 |
 
-## 渐进式加载
+## Dependencies
 
-| 层级 | 内容 | 何时加载 |
-|------|------|---------|
-| L1 元数据 | name + description | 会话启动时 |
-| L2 指令 | SKILL.md 全文 | 调用 /novel-setup 时 |
-| L3 模板 | references/templates/* | 生成文件时 |
+None. Output consumed by `novel-write`.
