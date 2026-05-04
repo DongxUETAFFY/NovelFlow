@@ -276,6 +276,14 @@ scripts/validate-summaries.sh novel/summaries.md novel/characters.md
 
 NovelFlow 不绑定 Claude Code。
 
+对 Codex、Cursor、OpenCode 这类有文件读写能力的 agent，直接使用仓库入口文件：
+
+```text
+AGENTS.md
+```
+
+它会告诉 agent 什么时候加载哪个 Skill、哪些 `novel/` 文件是真源、每章写完后要更新哪些状态文件。
+
 自建 agent 可以这样用：
 
 1. 把相关 `SKILL.md` 作为流程指令加载。
@@ -283,7 +291,13 @@ NovelFlow 不绑定 Claude Code。
 3. 只有 Skill 要求时才读取 references。
 4. 每章写完后更新 `summaries.md`、`story-state.md`、`progress.md`、`context-brief.md`。
 
-如果是在 ChatGPT / Claude Chat 这种没有文件工具的环境，需要手动粘入：
+如果是在 ChatGPT / Claude Chat 这种没有文件工具的环境，先生成单次上下文包：
+
+```bash
+python scripts/build-context-pack.py --novel-dir novel --chapter auto --include-review --output context-pack.md
+```
+
+然后把 `context-pack.md` 粘进聊天窗口。这个包里包含：
 
 1. `context-brief.md`
 2. `story-state.md` 相关部分

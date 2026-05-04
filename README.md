@@ -282,6 +282,14 @@ scripts/validate-summaries.sh novel/summaries.md novel/characters.md
 
 NovelFlow is not locked to Claude Code.
 
+For Codex, Cursor, OpenCode, or any file-capable agent, use the repository entry file:
+
+```text
+AGENTS.md
+```
+
+That file explains which Skill to load, which project files are source of truth, and how to update state after each chapter.
+
 For a custom agent:
 
 1. Load the relevant `SKILL.md` as procedural instruction.
@@ -289,7 +297,13 @@ For a custom agent:
 3. Read references only when the Skill says to.
 4. Update `summaries.md`, `story-state.md`, `progress.md`, and `context-brief.md` after every chapter.
 
-For ChatGPT or Claude Chat without file tools, manually paste:
+For ChatGPT or Claude Chat without file tools, build a single context pack:
+
+```bash
+python scripts/build-context-pack.py --novel-dir novel --chapter auto --include-review --output context-pack.md
+```
+
+Then paste `context-pack.md` into the chat. The pack contains:
 
 1. `context-brief.md`
 2. relevant `story-state.md` sections
