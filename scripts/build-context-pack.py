@@ -4,6 +4,7 @@
 The pack includes:
 - context-brief.md
 - story-state.md when available
+- thread-ledger.md relevant rows when available
 - outline rows for C-1/C/C+1
 - pyramid-compressed summaries
 - previous chapter full text as voice anchor
@@ -74,6 +75,45 @@ def extract_outline_rows(outline: str, chapters: Iterable[int]) -> List[str]:
     return [rows[chapter] for chapter in sorted(rows)]
 
 
+def extract_thread_rows(ledger: str, current: int, outline_rows: List[str]) -> List[str]:
+    if not ledger:
+        return []
+
+    haystack = " ".join(outline_rows).lower()
+    rows: List[str] = []
+    for line in ledger.splitlines():
+        if not line.startswith("|") or re.match(r"^\|\s*-+", line):
+            continue
+        if "| ID " in line or "|----" in line:
+            continue
+
+        cells = [cell.strip() for cell in line.strip().strip("|").split("|")]
+        if len(cells) < 9:
+            continue
+
+        thread_id, thread, _type, planted, _evidence, _state, payoff, _form, status = cells[:9]
+        searchable = f"{thread_id} {thread}".lower()
+        due = chapter_ref_matches(planted, current) or chapter_ref_matches(payoff, current) or chapter_ref_matches(payoff, current + 1)
+        active = status not in {"paid-off", "closed-red-herring", "dropped"}
+        mentioned = bool(thread and thread.lower() in haystack)
+        if active and (due or mentioned):
+            rows.append(line)
+
+    return rows[:12]
+
+
+def chapter_ref_matches(text: str, chapter: int) -> bool:
+    if not text:
+        return False
+    patterns = [
+        rf"\bCh\s*{chapter}\b",
+        rf"\bChapter\s*{chapter}\b",
+        rf"第\s*{chapter}\s*章",
+        rf"\b{chapter}\b",
+    ]
+    return any(re.search(pattern, text, re.IGNORECASE) for pattern in patterns)
+
+
 def parse_summaries(summaries: str) -> Dict[int, str]:
     result: Dict[int, List[str]] = {}
     current: Optional[int] = None
@@ -114,11 +154,13 @@ def build_pack(novel_dir: Path, chapter: Optional[int], include_review: bool) ->
 
     outline = read_text(novel_dir / "outline.md")
     story_state = read_text(novel_dir / "story-state.md")
+    thread_ledger = read_text(novel_dir / "thread-ledger.md")
     summaries = parse_summaries(read_text(novel_dir / "summaries.md"))
     previous_chapter = read_text(novel_dir / "chapters" / f"chapter-{current - 1}.md")
     review_checklist = read_text(ROOT / "skills" / "novel-write" / "references" / "review-checklist.md")
 
     outline_rows = extract_outline_rows(outline, [current - 1, current, current + 1])
+    thread_rows = extract_thread_rows(thread_ledger, current, outline_rows)
 
     compressed: List[str] = []
     for chapter_num in sorted(summaries):
@@ -141,22 +183,26 @@ def build_pack(novel_dir: Path, chapter: Optional[int], include_review: bool) ->
         "## 3. Immediate Outline Rows (C-1 / C / C+1)",
         "\n".join(outline_rows) if outline_rows else "_No matching outline rows found._",
         "",
-        "## 4. Pyramid-Compressed Previous Summaries",
+        "## 4. Relevant Thread Ledger Rows",
+        "\n".join(thread_rows) if thread_rows else "_No due or directly relevant thread-ledger rows found._",
+        "",
+        "## 5. Pyramid-Compressed Previous Summaries",
         "\n\n".join(compressed) if compressed else "_No prior summaries available._",
         "",
-        "## 5. Voice Anchor: Previous Chapter Full Text",
+        "## 6. Voice Anchor: Previous Chapter Full Text",
         previous_chapter.strip() if previous_chapter else "_No previous chapter full text. This is likely Chapter 1._",
         "",
-        "## 6. Writing Task",
+        "## 7. Writing Task",
         f"Write Chapter {current}. Preserve all continuity constraints above. After drafting, provide:",
         "- the chapter text",
         "- a chapter summary whose first sentence contains named character + concrete event + directional consequence",
         "- updates needed for story-state.md",
+        "- updates needed for thread-ledger.md",
         "- updates needed for context-brief.md and progress.md",
     ]
 
     if include_review:
-        parts.extend(["", "## 7. Review Checklist", review_checklist.strip()])
+        parts.extend(["", "## 8. Review Checklist", review_checklist.strip()])
 
     return "\n\n".join(parts).rstrip() + "\n"
 

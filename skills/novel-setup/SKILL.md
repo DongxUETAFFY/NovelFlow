@@ -110,8 +110,9 @@ Once confirmed, create the directory structure and generate all files.
 4. Generate `novel/world.md` — only if story has invented settings, magic, or special rules
 5. Generate `novel/progress.md` — statistics, chapter details, foreshadowing tracker
 6. Generate `novel/story-state.md` — dynamic long-form memory: active threads, character state, continuity locks
-7. Initialize `novel/summaries.md` — empty, ready for novel-write
-8. Generate `novel/context-brief.md` — compressed entry point, < 5000 chars, single source of truth for chapter status
+7. Generate `novel/thread-ledger.md` — dedicated foreshadowing/payoff lifecycle tracker
+8. Initialize `novel/summaries.md` — empty, ready for novel-write
+9. Generate `novel/context-brief.md` — compressed entry point, < 5000 chars, single source of truth for chapter status
 
 ## Phase 5: Validate Generated Files
 
@@ -120,6 +121,7 @@ Before handing off, run a quick consistency check across all generated files:
 - [ ] **Chapter count matches**: outline.md, progress.md, and context-brief.md must all reference the same total chapter count
 - [ ] **Context-brief size**: `novel/context-brief.md` must be < 5000 characters. If over, compress character cards further
 - [ ] **Story-state exists**: `novel/story-state.md` must contain Character State, Open Threads, World Facts, Continuity Locks, and Recent Relationship Shifts sections
+- [ ] **Thread-ledger exists**: `novel/thread-ledger.md` must contain Active Threads and Paid Off / Closed Threads sections with stable IDs
 - [ ] **Milestone values valid**: All milestone values in outline.md must be from the defined set (`normal`, `inciting-incident`, `midpoint`, `darkest-moment`, `climax`, `death`, `reunion`, `revelation`, `act-break`)
 - [ ] **All chapters have scene summaries**: Every chapter row in outline.md must have a non-empty Scene Summary
 - [ ] **Key turning points populated**: The "Key Turning Points" section in outline.md must have chapter numbers for at least: Inciting Incident, Midpoint, Darkest Moment, Climax
@@ -139,6 +141,7 @@ After all files are generated, tell the user:
 > - `novel/world.md` — World bible (if applicable)
 > - `novel/progress.md` — Writing progress tracker
 > - `novel/story-state.md` — Dynamic continuity state (threads, relationship shifts, current pressures)
+> - `novel/thread-ledger.md` — Foreshadowing and payoff ledger
 > - `novel/summaries.md` — Will be filled as chapters are written
 >
 > **Start Chapter 1 now?** Say "start" / 「开始」 and I'll begin writing. After each chapter I'll pause for your review — say "continue" / 「继续」 for the next chapter, or give specific feedback like "that scene felt rushed."

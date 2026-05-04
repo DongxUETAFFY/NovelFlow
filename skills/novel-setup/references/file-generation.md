@@ -68,7 +68,21 @@ Initial requirements:
 - Continuity Locks: 5-12 short facts that must never drift
 - Keep the file concise. This is a working memory file, not a second outline.
 
-## 4g: Initialize `novel/summaries.md`
+## 4g: Generate `novel/thread-ledger.md`
+
+Read the template at `references/templates/thread-ledger-template.md`. Fill it with planned foreshadowing, mysteries, planted objects, emotional promises, red herrings, and delayed consequences.
+
+**Purpose:** `thread-ledger.md` is the dedicated foreshadowing/payoff ledger. `story-state.md` stores current pressure; `thread-ledger.md` stores the lifecycle of every significant thread from planned/planted to advanced/paid-off/closed.
+
+Initial requirements:
+- Add one row for every major mystery, relationship promise, prophecy, planted object, planned reveal, red herring, or delayed consequence in the outline
+- Use stable IDs such as `T01`, `T02`, `T03`
+- Set `Planted In` to the planned chapter if not drafted yet
+- Set `Payoff Target` to the intended chapter or range
+- Set `Payoff Form` from the template values
+- Keep minor atmosphere motifs out unless they create a future obligation
+
+## 4h: Initialize `novel/summaries.md`
 
 Create this file with initial content:
 ```markdown
@@ -77,7 +91,7 @@ Create this file with initial content:
 *Summaries are added by novel-write after each chapter is generated. Each entry includes the chapter's key events, character developments, and narrative significance.*
 ```
 
-## 4h: Generate `novel/context-brief.md`
+## 4i: Generate `novel/context-brief.md`
 
 Read the template at `references/templates/context-brief-template.md`. Fill it with compressed versions of all novel data. The context-brief.md is the **entry point for every writing session** — any agent reads this file first to know what the novel is, who the characters are, and where writing stopped.
 
@@ -85,5 +99,6 @@ Requirements:
 - Total file: < 5000 characters. Any agent should read it in one glance.
 - Character cards: each character in 1-2 lines only — name, role, 2-3 keywords, arc start→end
 - State snapshot: 3-6 bullets copied from `story-state.md` covering current pressure, unresolved threads, and continuity locks
+- Thread snapshot: 2-5 high-risk or soon-due items copied from `thread-ledger.md`
 - Chapter table: all chapters from outline, all initially `planned`
 - Writing status: 0/{{TOTAL}}, next chapter Ch1, today's date

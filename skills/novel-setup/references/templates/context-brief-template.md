@@ -21,6 +21,10 @@
 <!-- 3-6 bullets copied from story-state.md. Keep only what the next chapter must remember. -->
 {{STATE_SNAPSHOT_BULLETS}}
 
+## Thread Snapshot / 伏笔快照
+<!-- 2-5 soon-due or high-risk items copied from thread-ledger.md. -->
+{{THREAD_SNAPSHOT_BULLETS}}
+
 ## Chapter Index / 章节目录
 | Ch | Title | Status |
 |----|-------|--------|

@@ -38,6 +38,7 @@ Treat files under `novel/` as the source of truth:
 | `characters.md` | Static character canon |
 | `world.md` | Static world rules, optional |
 | `story-state.md` | Dynamic continuity memory |
+| `thread-ledger.md` | Foreshadowing and payoff ledger |
 | `summaries.md` | Chapter summaries for pyramid compression |
 | `progress.md` | Word counts, review notes, revision log |
 | `chapters/` | Draft chapter files |
@@ -47,8 +48,9 @@ After writing a chapter, update:
 1. `novel/chapters/chapter-{N}.md`
 2. `novel/summaries.md`
 3. `novel/story-state.md`
-4. `novel/progress.md`
-5. `novel/context-brief.md`
+4. `novel/thread-ledger.md`
+5. `novel/progress.md`
+6. `novel/context-brief.md`
 
 Do not mark a chapter complete until these files are updated.
 
@@ -59,6 +61,7 @@ Do not mark a chapter complete until these files are updated.
 - Read `references/review-checklist.md` only when reviewing.
 - Read `characters.md` and `world.md` by relevant section, not whole-file by default.
 - If `novel/story-state.md` is missing, create it from `context-brief.md`, `outline.md`, and `progress.md` before writing.
+- If `novel/thread-ledger.md` is missing, create it from `outline.md` and `progress.md` before writing.
 
 ## No File Tools
 

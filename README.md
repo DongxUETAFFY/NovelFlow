@@ -33,6 +33,7 @@ novel/
   characters.md     # Static character bible
   world.md          # Static world rules, optional
   story-state.md    # Dynamic long-form memory
+  thread-ledger.md  # Foreshadowing and payoff ledger
   summaries.md      # Chapter summaries for pyramid compression
   progress.md       # Word counts, review notes, revision log
   chapters/         # Generated chapter files
@@ -46,6 +47,7 @@ The key design choice is separation between **static canon**, **dynamic state**,
 | Static plan | `outline.md` | Chapter-by-chapter plan, act structure, turning points, milestone column |
 | Static canon | `characters.md`, `world.md` | Full character and world rules that should not be loaded unless relevant |
 | Dynamic state | `story-state.md` | Current wants, hidden pressures, relationship temperature, open threads, continuity locks |
+| Thread lifecycle | `thread-ledger.md` | Foreshadowing, mysteries, red herrings, promises, payoff target, payoff form, status |
 | Compressed history | `summaries.md` | Full summaries that are compressed at read time by distance |
 | Operational log | `progress.md` | Word counts, review notes, revision log, statistics |
 
@@ -62,7 +64,7 @@ Workflow:
 3. Ask a batched discovery questionnaire covering genre, POV, protagonist, antagonist, plot, world, and scope.
 4. Synthesize a working summary and wait for user confirmation.
 5. Generate the project files from templates.
-6. Validate chapter count, milestone values, character coverage, `context-brief.md` size, and `story-state.md` sections.
+6. Validate chapter count, milestone values, character coverage, `context-brief.md` size, `story-state.md`, and `thread-ledger.md`.
 7. Hand off to `novel-write`.
 
 The setup Skill exists because long novels fail early if the model starts drafting before structure exists. The plan must become files before chapter generation begins.
@@ -118,20 +120,26 @@ When writing Chapter C, NovelFlow assembles context in a fixed order:
    - relationship shifts
    - continuity locks
 
-3. Immediate outline context
+3. Thread ledger
+   - threads planted in C
+   - threads due in C/C+1
+   - high-risk forgotten threads
+   - planned payoff form
+
+4. Immediate outline context
    - chapter C-1 row
    - chapter C row
    - chapter C+1 row
 
-4. Pyramid summaries
+5. Pyramid summaries
    - distant chapters: one sentence
    - mid-distance chapters: first 50-100 words
    - recent chapters: full summaries
 
-5. Voice anchor
+6. Voice anchor
    - full text of chapter C-1
 
-6. Current writing instruction
+7. Current writing instruction
    - chapter title, target events, milestone constraints
 ```
 
@@ -141,6 +149,7 @@ This gives the model three kinds of memory:
 |-------------|-----------|
 | What the story is | `context-brief.md`, `outline.md` |
 | What is currently unstable | `story-state.md` |
+| What must pay off later | `thread-ledger.md` |
 | What already happened | `summaries.md` + previous chapter full text |
 
 ## Pyramid Context Compression
@@ -202,6 +211,38 @@ This file prevents a subtle long-novel failure: the model may remember static ch
 
 After every chapter, `novel-write` updates `story-state.md` before updating `context-brief.md`. The `context-brief.md` state snapshot then carries only the 3-6 most important points into the next session.
 
+## Foreshadowing Ledger: `thread-ledger.md`
+
+`thread-ledger.md` is a dedicated lifecycle table for foreshadowing and payoff. It exists because open threads in `story-state.md` are not enough for mystery, horror, political, or long romance structures where planted details need explicit payoff timing.
+
+Each significant thread gets a stable ID and a status:
+
+```text
+planned -> planted -> advanced -> paid-off
+```
+
+or, for false leads:
+
+```text
+planned -> planted -> closed-red-herring
+```
+
+The ledger tracks:
+
+| Field | Purpose |
+|-------|---------|
+| ID | Stable reference like `T01` |
+| Thread | What promise, mystery, object, or emotional setup exists |
+| Type | mystery, object, relationship, prophecy, red-herring, consequence |
+| Planted In | Chapter where it appears or should appear |
+| Evidence In Text | Concrete prose evidence after drafting |
+| Current State | What readers currently understand |
+| Payoff Target | Intended chapter or range |
+| Payoff Form | reveal, reversal, emotional-payoff, object-use, consequence, red-herring-close |
+| Status | planned, planted, advanced, paid-off, closed-red-herring, dropped |
+
+When writing a chapter, the agent reads only ledger rows that are planted in the current chapter, due now or next chapter, mentioned by the current outline row, or high-risk if forgotten. This keeps payoff tracking active without loading the entire ledger every time.
+
 ## Per-Chapter Write Loop
 
 Interactive mode runs this loop:
@@ -213,7 +254,7 @@ Step 2: Detect milestone constraints
 Step 3: Plan internally: scenes, character beats, state obligations, reveals
 Step 4: Write the chapter
 Step 5: Review with P0/P1/P2 severity
-Step 6: Update chapter file, summaries, story-state, progress, context-brief
+Step 6: Update chapter file, summaries, story-state, thread-ledger, progress, context-brief
 Step 7: Pause for author feedback
 ```
 
@@ -231,6 +272,7 @@ NovelFlow uses defense in depth instead of trusting one prompt instruction.
 | Full-auto caps | Quality collapse from writing too many chapters in one session |
 | Summary first-sentence rule | Distant memory becoming vague |
 | `story-state.md` checks | Forgotten open threads, relationship drift, continuity lock violations |
+| `thread-ledger.md` checks | Missed payoff, dropped red herrings, untracked planted clues |
 
 Severity levels:
 
@@ -295,7 +337,7 @@ For a custom agent:
 1. Load the relevant `SKILL.md` as procedural instruction.
 2. Start every writing session by reading `novel/context-brief.md`.
 3. Read references only when the Skill says to.
-4. Update `summaries.md`, `story-state.md`, `progress.md`, and `context-brief.md` after every chapter.
+4. Update `summaries.md`, `story-state.md`, `thread-ledger.md`, `progress.md`, and `context-brief.md` after every chapter.
 
 For ChatGPT or Claude Chat without file tools, build a single context pack:
 
@@ -307,10 +349,11 @@ Then paste `context-pack.md` into the chat. The pack contains:
 
 1. `context-brief.md`
 2. relevant `story-state.md` sections
-3. current outline row
-4. previous chapter full text
-5. pyramid-compressed summaries
-6. review checklist if needed
+3. relevant `thread-ledger.md` rows
+4. current outline row
+5. previous chapter full text
+6. pyramid-compressed summaries
+7. review checklist if needed
 
 ## License
 

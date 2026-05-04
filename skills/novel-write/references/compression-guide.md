@@ -35,7 +35,8 @@ Extract from the project files:
 2. **Genre & POV** — from the outline header
 3. **Character Cards** — from `novel/characters.md`, condensed: name, role, 3 key traits, current arc status (where they are in their journey at this point in the novel)
 4. **Dynamic State** — from `novel/story-state.md`, only the current pressure, relevant character rows, active open threads, continuity locks, and relationship shifts for this chapter
-5. **Outline Context** — from `novel/outline.md`, the table rows for:
+5. **Thread Ledger** — from `novel/thread-ledger.md`, only threads planted in C, due in C/C+1, mentioned by C's outline row, or high-risk if forgotten
+6. **Outline Context** — from `novel/outline.md`, the table rows for:
    - Chapter C-1 (where we just were)
    - Chapter C (what we're writing now)
    - Chapter C+1 (where we're going next)
@@ -75,13 +76,14 @@ Assemble in this order for the generation prompt:
 1. Foundation (premise, genre, POV)
 2. Character cards (all characters, condensed)
 3. Dynamic state from story-state.md
-4. Outline context (C-1, C, C+1)
-5. Tier 5: Distant one-liners (ch 1 → C-11, chronological)
-6. Tier 4: Compressed summaries (ch C-10 → C-7, chronological)
-7. Tier 3: Moderate summaries (ch C-6 → C-4, chronological)
-8. Tier 2: Detailed summaries (ch C-3 → C-2, chronological)
-9. Voice Anchor: Full text of chapter C-1
-10. Writing instruction for chapter C
+4. Relevant thread-ledger rows
+5. Outline context (C-1, C, C+1)
+6. Tier 5: Distant one-liners (ch 1 → C-11, chronological)
+7. Tier 4: Compressed summaries (ch C-10 → C-7, chronological)
+8. Tier 3: Moderate summaries (ch C-6 → C-4, chronological)
+9. Tier 2: Detailed summaries (ch C-3 → C-2, chronological)
+10. Voice Anchor: Full text of chapter C-1
+11. Writing instruction for chapter C
 
 This chronological-then-reverse-proximity order creates a natural narrative flow that builds toward the current moment.
 

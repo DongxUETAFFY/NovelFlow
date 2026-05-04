@@ -33,6 +33,7 @@ novel/
   characters.md     # 静态人物设定
   world.md          # 静态世界规则，可选
   story-state.md    # 动态长篇记忆
+  thread-ledger.md  # 伏笔与回收账本
   summaries.md      # 章节摘要，用于金字塔压缩
   progress.md       # 字数、审阅笔记、修订记录
   chapters/         # 生成的章节正文
@@ -46,6 +47,7 @@ novel/
 | 静态计划 | `outline.md` | 三幕结构、每章目标、关键转折点、Milestone 列 |
 | 静态正典 | `characters.md`, `world.md` | 完整人物设定和世界规则，只在需要时读相关段落 |
 | 动态状态 | `story-state.md` | 当前欲望、隐藏压力、关系温度、未回收线索、世界事实、禁忘项 |
+| 伏笔生命周期 | `thread-ledger.md` | 伏笔、悬念、伪线索、承诺、回收目标、回收形式、状态 |
 | 压缩历史 | `summaries.md` | 每章完整摘要，读取时按距离压缩 |
 | 操作日志 | `progress.md` | 字数、日期、审阅笔记、修订记录 |
 
@@ -62,7 +64,7 @@ novel/
 3. 一次性批量提问：类型、视角、主角、反派、主线、世界观、篇幅。
 4. 整理工作摘要，等待用户确认。
 5. 根据模板生成项目文件。
-6. 校验章节数、Milestone、人物覆盖、`context-brief.md` 长度、`story-state.md` 结构。
+6. 校验章节数、Milestone、人物覆盖、`context-brief.md` 长度、`story-state.md` 和 `thread-ledger.md` 结构。
 7. 交给 `novel-write` 开始写作。
 
 这个 Skill 存在的原因很明确：长篇失败往往不是写到一半才失败，而是一开始没有结构化状态。正文开始前，计划必须落到文件里。
@@ -118,20 +120,26 @@ NovelFlow 遵循 Skill 的渐进加载思想：
    - 关系变化
    - 禁止遗忘事项
 
-3. Immediate Outline Context
+3. Thread Ledger
+   - 本章要种下的伏笔
+   - 本章/下一章到期的伏笔
+   - 高风险遗忘线索
+   - 计划回收形式
+
+4. Immediate Outline Context
    - 第 C-1 章大纲行
    - 第 C 章大纲行
    - 第 C+1 章大纲行
 
-4. Pyramid Summaries
+5. Pyramid Summaries
    - 很远的章节：一句话
    - 中距离章节：摘要前 50-100 字
    - 近章节：完整摘要
 
-5. Voice Anchor
+6. Voice Anchor
    - 第 C-1 章全文
 
-6. Current Writing Instruction
+7. Current Writing Instruction
    - 本章标题、目标事件、Milestone 约束
 ```
 
@@ -141,6 +149,7 @@ NovelFlow 遵循 Skill 的渐进加载思想：
 |----------|------|
 | 这个故事是什么 | `context-brief.md`, `outline.md` |
 | 现在什么最不稳定 | `story-state.md` |
+| 以后必须回收什么 | `thread-ledger.md` |
 | 之前发生过什么 | `summaries.md` + 上一章全文 |
 
 ## 金字塔上下文压缩
@@ -196,6 +205,38 @@ NovelFlow 遵循 Skill 的渐进加载思想：
 
 每章写完后，`novel-write` 会先更新 `story-state.md`，再把其中最关键的 3-6 条压缩进 `context-brief.md` 的 state snapshot。
 
+## 伏笔账本：`thread-ledger.md`
+
+`thread-ledger.md` 是专门管理伏笔和回收的生命周期表。只靠 `story-state.md` 的 Open Threads 不够支撑悬疑、恐怖、权谋、长篇感情线，因为这些类型需要明确知道：什么时候种下、什么时候推进、什么时候反转、什么时候回收。
+
+每条重要线索都有稳定 ID 和状态：
+
+```text
+planned -> planted -> advanced -> paid-off
+```
+
+伪线索则可以这样关闭：
+
+```text
+planned -> planted -> closed-red-herring
+```
+
+账本记录：
+
+| 字段 | 用途 |
+|------|------|
+| ID | 稳定编号，如 `T01` |
+| Thread | 具体伏笔、谜题、物件、情感承诺 |
+| Type | mystery, object, relationship, prophecy, red-herring, consequence |
+| Planted In | 种下章节 |
+| Evidence In Text | 正文里的证据 |
+| Current State | 读者当前理解 |
+| Payoff Target | 计划回收章节或范围 |
+| Payoff Form | reveal, reversal, emotional-payoff, object-use, consequence, red-herring-close |
+| Status | planned, planted, advanced, paid-off, closed-red-herring, dropped |
+
+写每章时，agent 只读取“本章要种下、当前/下一章到期、当前大纲行提到、或者遗忘风险高”的账本行，不会每次全量塞进上下文。
+
 ## 每章写作闭环
 
 交互模式执行这个循环：
@@ -207,7 +248,7 @@ Step 2: 检测 Milestone 约束
 Step 3: 内部规划：场景、人物节拍、状态义务、信息揭示
 Step 4: 写完整章节
 Step 5: 按 P0/P1/P2 审阅
-Step 6: 更新章节正文、summaries、story-state、progress、context-brief
+Step 6: 更新章节正文、summaries、story-state、thread-ledger、progress、context-brief
 Step 7: 暂停等待作者反馈
 ```
 
@@ -225,6 +266,7 @@ NovelFlow 不依赖单一句“请保持一致”。它用多层防线。
 | Full-auto caps | 一次写太多章导致质量塌陷 |
 | Summary first-sentence rule | 远期记忆变成“气氛紧张”这种废摘要 |
 | `story-state.md` 检查 | 忘掉未回收线索、关系漂移、禁忘项冲突 |
+| `thread-ledger.md` 检查 | 伏笔未回收、伪线索未关闭、正文种下线索但账本未记录 |
 
 严重级别：
 
@@ -289,7 +331,7 @@ AGENTS.md
 1. 把相关 `SKILL.md` 作为流程指令加载。
 2. 每次写作先读 `novel/context-brief.md`。
 3. 只有 Skill 要求时才读取 references。
-4. 每章写完后更新 `summaries.md`、`story-state.md`、`progress.md`、`context-brief.md`。
+4. 每章写完后更新 `summaries.md`、`story-state.md`、`thread-ledger.md`、`progress.md`、`context-brief.md`。
 
 如果是在 ChatGPT / Claude Chat 这种没有文件工具的环境，先生成单次上下文包：
 
@@ -301,10 +343,11 @@ python scripts/build-context-pack.py --novel-dir novel --chapter auto --include-
 
 1. `context-brief.md`
 2. `story-state.md` 相关部分
-3. 当前章 outline 行
-4. 上一章全文
-5. 金字塔压缩后的前文摘要
-6. 需要时粘入审阅清单
+3. `thread-ledger.md` 相关行
+4. 当前章 outline 行
+5. 上一章全文
+6. 金字塔压缩后的前文摘要
+7. 需要时粘入审阅清单
 
 ## License
 

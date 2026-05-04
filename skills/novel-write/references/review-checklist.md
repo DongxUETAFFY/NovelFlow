@@ -30,6 +30,8 @@ Run after each chapter generation. Fix P0 issues inline. Fix P1 issues and note 
 - [ ] Cause and effect: does this chapter follow logically from where C-1 left off?
 - [ ] Foreshadowing: any new threads planted? Existing threads advanced? Check progress.md tracker.
 - [ ] Open threads in `novel/story-state.md` are preserved, advanced, paid off, or intentionally left dormant. No thread is contradicted.
+- [ ] `novel/thread-ledger.md` updated for any planted, advanced, paid-off, reversed, or closed thread
+- [ ] Threads with Payoff Target at or before this chapter are paid off, advanced with a reason, or flagged P2
 
 ## 3. World-Building Consistency
 
@@ -74,6 +76,7 @@ Run these checks for every chapter; they become **mandatory and elevated** from 
 - [ ] Chapter number in header matches the filename
 - [ ] Word count recorded for progress.md update
 - [ ] `story-state.md` updated for character state, open threads, world facts, continuity locks, and relationship shifts
+- [ ] `thread-ledger.md` updated for foreshadowing/payoff status changes
 
 ---
 
@@ -93,6 +96,7 @@ Run these checks for every chapter; they become **mandatory and elevated** from 
 - Pacing issues (scene feels rushed or drags)
 - Minor world detail inconsistency (e.g., color of a described object)
 - Missing `story-state.md` update for a minor character/thread/world change
+- Missing `thread-ledger.md` update for a minor planted or advanced thread
 - Weak chapter ending (doesn't hook to next chapter effectively)
 - **Scene density warning**: Chapter trending toward event-listing rather than full scenes
 - **Style drift warning**: Sensory detail density noticeably lower than first-third baseline
@@ -105,6 +109,7 @@ Run these checks for every chapter; they become **mandatory and elevated** from 
 - Plot contradiction with a previous chapter that can't be resolved by minor edits
 - World rule violation (magic/technology does something the world bible says is impossible)
 - Contradiction with `story-state.md` continuity locks or an active unresolved thread
+- Missed payoff for a thread whose target chapter has arrived, unless the author intentionally delayed it
 - Timeline impossibility (events couldn't physically happen in the time between chapters)
 - Thematic departure (chapter's tone or message contradicts the novel's established tone)
 - Character arc derailment (character makes a choice that breaks their arc trajectory)
@@ -122,5 +127,6 @@ Run these checks for every chapter; they become **mandatory and elevated** from 
 4. Apply P1 fixes and add a note in progress.md's Review Notes column.
 5. Compile P2 issues into the return report with specific suggestions.
 6. Update `story-state.md` after fixes so dynamic continuity matches the final chapter text.
-7. Never silently "fix" a P2 issue — these require the author's creative judgment.
-8. **From chapter 30 onward**: Pay extra attention to Section 5 (Structural Health). The natural tendency is decay — actively guard against it.
+7. Update `thread-ledger.md` after fixes so planted/advanced/paid-off/closed statuses match the final chapter text.
+8. Never silently "fix" a P2 issue — these require the author's creative judgment.
+9. **From chapter 30 onward**: Pay extra attention to Section 5 (Structural Health). The natural tendency is decay — actively guard against it.

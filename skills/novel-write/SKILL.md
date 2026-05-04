@@ -40,6 +40,7 @@ Foundation is already in context-brief.md. Now read only what's **necessary** fo
 
 - `novel/outline.md` — read the table rows for chapters C-1, C, and C+1 to understand immediate narrative context (where we just were, what we're writing now, where we're going next)
 - `novel/story-state.md` — read current narrative pressure, character state rows for characters in C, open threads relevant to C, and continuity locks
+- `novel/thread-ledger.md` — read only threads planted in C, due in C/C+1, mentioned by C's outline row, or high-risk if forgotten
 - `novel/summaries.md` — apply pyramid compression per `references/compression-guide.md`
 - Previous chapter full text (if any) as Voice Anchor. Skip for Chapter 1.
 - If this chapter involves specific world-building rules, read relevant sections of `novel/world.md` (not the whole file)
@@ -53,6 +54,12 @@ Do NOT blindly read all project files. context-brief.md's compressed character c
 - Use `progress.md` for existing foreshadowing/revision notes if present
 - Keep the initial file concise; mark uncertain fields as `unknown yet` instead of inventing facts
 - Tell the user it was created as a compatibility migration, then continue
+
+If `novel/thread-ledger.md` is missing, create it before writing:
+- Use `outline.md` and `progress.md` to extract planned mysteries, promises, planted objects, red herrings, relationship payoffs, and delayed consequences
+- Use stable IDs (`T01`, `T02`, ...)
+- Mark uncertain entries as `planned` with `unknown yet` evidence instead of inventing prose evidence
+- Keep the ledger concise; do not add pure mood motifs unless they require future payoff
 
 ### Step 2: Detect Milestone Chapters
 
@@ -79,6 +86,7 @@ Plan this chapter's structure silently. Consider:
 - **Scene count**: Identify at least one fully-developed scene — a specific moment in a specific place with sensory detail, character action, and live dialogue. For milestone chapters, plan 2-3 developed scenes minimum.
 - **Character beats**: What does each character in this chapter want in this moment? What are they hiding?
 - **State obligations**: Which open thread, relationship shift, world fact, or continuity lock from `story-state.md` must this chapter preserve or advance?
+- **Thread obligations**: Which `thread-ledger.md` entries should be planted, advanced, paid off, reversed, or closed in this chapter?
 - **Voice matching**: Read the first 3 paragraphs of the previous chapter. Match that cadence, sentence rhythm, and sensory density.
 - **Information reveals**: What does the reader learn? What remains hidden?
 - **Scene vs summary**: For each story beat in the outline, decide: will this be a rendered scene or a bridging summary? At least one beat must be a scene.
@@ -118,6 +126,12 @@ Read `references/review-checklist.md`. Run the full checklist.
   - World Facts: add only facts established in drafted prose that constrain future scenes
   - Continuity Locks: add short "must not drift" facts when the chapter creates a hard constraint
   - Recent Relationship Shifts: record meaningful changes, not routine conversation
+- `novel/thread-ledger.md` — update foreshadowing/payoff lifecycle:
+  - Add new threads only when the chapter creates a future reader obligation
+  - Mark planned threads as `planted` when they appear in prose and fill `Evidence In Text`
+  - Mark active threads as `advanced` when the chapter changes their meaning, stakes, or reader interpretation
+  - Mark threads as `paid-off` only when the payoff is explicit enough for readers to recognize
+  - Move resolved threads to Paid Off / Closed Threads with payoff chapter and payoff form
 - `novel/context-brief.md` — update chapter status, writing progress, and State Snapshot. **context-brief.md is the single source of truth for chapter status; story-state.md stores dynamic continuity; progress.md stores detailed stats only.**
 
 When updating summaries.md, write a full detailed summary (not a one-liner). This summary will be pyramid-compressed for future chapters — its first sentence and first 100 words are especially important.
@@ -237,6 +251,7 @@ Read the target chapter in full. Then read the minimum context needed:
 - `novel/world.md` if world rules are relevant
 - `novel/progress.md` — to check foreshadowing threads relevant to this chapter
 - `novel/story-state.md` — to check current character state, relationship temperature, open threads, world facts, and continuity locks
+- `novel/thread-ledger.md` — to check foreshadowing/payoff lifecycle entries relevant to this chapter
 
 ### Step R2: Run Full Review
 
