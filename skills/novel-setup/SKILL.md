@@ -1,6 +1,6 @@
 ---
 name: novel-setup
-description: Interactive story discovery and structured novel planning. Transforms scattered ideas into chapter outlines, character profiles, and world-building files. Triggers on "start a novel", "plan my book", "story planning", "构思小说", "小说设定", "帮我写小说", "想写小说".
+description: Use when planning a long-form novel from scattered ideas, including story discovery, outline creation, character setup, worldbuilding, market brief creation, and project file generation. Trigger on "start a novel", "plan my book", "构思小说", "小说设定", "帮我写小说".
 ---
 
 # Novel Setup — Story Discovery & Planning
@@ -25,7 +25,7 @@ Before any interaction, check if `novel/context-brief.md` exists in the current 
 
 **⚠️ "New book" warning:** If the user chooses this, explicitly warn before proceeding:
 
-> Starting a new book will overwrite ALL existing files in `novel/` — including `outline.md`, `characters.md`, `world.md`, `progress.md`, `summaries.md`, `context-brief.md`, and all `chapters/*.md`. The old `novel/` directory will be permanently lost. Are you sure? Say "yes, overwrite" to confirm.
+> Starting a new book will overwrite ALL existing files in `novel/` — including `outline.md`, `market-brief.md`, `characters.md`, `world.md`, `story-state.md`, `thread-ledger.md`, `progress.md`, `summaries.md`, `context-brief.md`, and all `chapters/*.md`. The old `novel/` directory will be permanently lost. Are you sure? Say "yes, overwrite" to confirm.
 
 **Wait for user choice.** If "edit" or "new book", continue below. If "continue writing", transition directly to novel-write.
 
@@ -108,11 +108,12 @@ Once confirmed, create the directory structure and generate all files.
 2. Generate `novel/outline.md` — chapter table with Milestone column, act structure, plot threads
 3. Generate `novel/characters.md` — Public Persona vs Hidden Depths split for every character
 4. Generate `novel/world.md` — only if story has invented settings, magic, or special rules
-5. Generate `novel/progress.md` — statistics, chapter details, foreshadowing tracker
-6. Generate `novel/story-state.md` — dynamic long-form memory: active threads, character state, continuity locks
-7. Generate `novel/thread-ledger.md` — dedicated foreshadowing/payoff lifecycle tracker
-8. Initialize `novel/summaries.md` — empty, ready for novel-write
-9. Generate `novel/context-brief.md` — compressed entry point, < 5000 chars, single source of truth for chapter status
+5. Generate `novel/market-brief.md` — concise target-reader, genre-promise, hook, and style contract
+6. Generate `novel/progress.md` — statistics, chapter details, foreshadowing tracker
+7. Generate `novel/story-state.md` — dynamic long-form memory: active threads, character state, continuity locks
+8. Generate `novel/thread-ledger.md` — dedicated foreshadowing/payoff lifecycle tracker
+9. Initialize `novel/summaries.md` — empty, ready for novel-write
+10. Generate `novel/context-brief.md` — compressed entry point, < 5000 chars, single source of truth for chapter status
 
 ## Phase 5: Validate Generated Files
 
@@ -120,6 +121,7 @@ Before handing off, run a quick consistency check across all generated files:
 
 - [ ] **Chapter count matches**: outline.md, progress.md, and context-brief.md must all reference the same total chapter count
 - [ ] **Context-brief size**: `novel/context-brief.md` must be < 5000 characters. If over, compress character cards further
+- [ ] **Market-brief size**: `novel/market-brief.md` must be < 1500 characters and include target reader, core promise, hook, and style contract
 - [ ] **Story-state exists**: `novel/story-state.md` must contain Character State, Open Threads, World Facts, Continuity Locks, and Recent Relationship Shifts sections
 - [ ] **Thread-ledger exists**: `novel/thread-ledger.md` must contain Active Threads and Paid Off / Closed Threads sections with stable IDs
 - [ ] **Milestone values valid**: All milestone values in outline.md must be from the defined set (`normal`, `inciting-incident`, `midpoint`, `darkest-moment`, `climax`, `death`, `reunion`, `revelation`, `act-break`)
@@ -139,6 +141,7 @@ After all files are generated, tell the user:
 > - `novel/outline.md` — Full chapter-by-chapter outline
 > - `novel/characters.md` — Detailed character profiles
 > - `novel/world.md` — World bible (if applicable)
+> - `novel/market-brief.md` — Target reader, genre promise, hook, and style contract
 > - `novel/progress.md` — Writing progress tracker
 > - `novel/story-state.md` — Dynamic continuity state (threads, relationship shifts, current pressures)
 > - `novel/thread-ledger.md` — Foreshadowing and payoff ledger

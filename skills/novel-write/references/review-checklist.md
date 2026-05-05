@@ -12,6 +12,8 @@
 
 Run after each chapter generation. Fix P0 issues inline. Fix P1 issues and note them. Flag P2 issues for the user.
 
+Revision boundary: apply P0 fixes and one focused P1 pass. Do not keep rewriting until the chapter feels perfect; unresolved creative or structural questions become P2 and require the author.
+
 ## 1. Character Consistency
 
 - [ ] All named characters spelled consistently with `novel/characters.md`
@@ -49,6 +51,7 @@ Run after each chapter generation. Fix P0 issues inline. Fix P1 issues and note 
 - [ ] Pacing: right balance of action, dialogue, introspection, and description for this story's rhythm
 - [ ] **Style drift check**: Compare sensory detail density with a chapter from the novel's first third. If the current chapter is noticeably more abstract/conceptual and less sensory/physical, flag as P1.
 - [ ] **Scene density check**: Does this chapter contain at least one fully-developed scene (specific place + physical experience + real-time + character interaction)? If the chapter is primarily event-listing or summary, flag as P1.
+- [ ] **Market/style contract**: Does this chapter preserve the target-reader promise, hook, and prose contract in `novel/market-brief.md` or the Market Snapshot?
 
 ## 5. Structural Health (Anti-Decay)
 
@@ -95,6 +98,7 @@ Run these checks for every chapter; they become **mandatory and elevated** from 
 - Missing or incomplete outline beat (key event from outline not addressed)
 - Pacing issues (scene feels rushed or drags)
 - Minor world detail inconsistency (e.g., color of a described object)
+- Minor market/style drift that can be corrected locally without changing plot direction
 - Missing `story-state.md` update for a minor character/thread/world change
 - Missing `thread-ledger.md` update for a minor planted or advanced thread
 - Weak chapter ending (doesn't hook to next chapter effectively)
@@ -116,6 +120,7 @@ Run these checks for every chapter; they become **mandatory and elevated** from 
 - **Milestone chapter underdevelopment**: Key emotional node (climax, reunion, death, darkest moment) is shorter or less developed than average chapters
 - **Sustained decay**: Three or more consecutive chapters with P1 structural health flags
 - **Genre/style contract break**: Major shift in narrative mode (e.g., from sensory-driven fiction to abstract/conceptual discourse) that would alienate existing readers
+- **Reader promise break**: Chapter abandons the core promise or hook defined in `market-brief.md` in a way that would require a direction decision
 
 ---
 
@@ -124,9 +129,10 @@ Run these checks for every chapter; they become **mandatory and elevated** from 
 1. Read the generated chapter in full.
 2. Run through each checklist section, marking items pass/fail.
 3. Apply all P0 fixes directly to the chapter file.
-4. Apply P1 fixes and add a note in progress.md's Review Notes column.
+4. Apply one focused P1 revision pass and add a note in progress.md's Review Notes column.
 5. Compile P2 issues into the return report with specific suggestions.
 6. Update `story-state.md` after fixes so dynamic continuity matches the final chapter text.
 7. Update `thread-ledger.md` after fixes so planted/advanced/paid-off/closed statuses match the final chapter text.
 8. Never silently "fix" a P2 issue — these require the author's creative judgment.
 9. **From chapter 30 onward**: Pay extra attention to Section 5 (Structural Health). The natural tendency is decay — actively guard against it.
+10. Stop after one P1 pass. If another broad rewrite is needed, classify the remaining issue as P2.

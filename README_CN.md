@@ -14,6 +14,7 @@ NovelFlow 不要求模型“凭记忆写完整本书”，而是把小说拆成�
 | 防止上下文爆炸 | Skill 与项目文件都采用渐进式加载，只读当前步骤需要的内容 |
 | 保持文风连续 | 写第 C 章时注入第 C-1 章全文作为 Voice Anchor |
 | 保留长线剧情记忆 | 前文摘要按距离金字塔压缩，近详远略 |
+| 保持读者承诺和文风方向 | 用短小 `market-brief.md` 保存目标读者、核心卖点和风格契约 |
 | 防止后期水文和提纲化 | 第 30 章后启用结构健康检查 |
 | 保护高潮、死亡、重逢、揭示等情绪节点 | outline 中标记 Milestone，写作时强制给更多场景和篇幅 |
 | 支持跨会话恢复 | 每次从 `context-brief.md` 和 `story-state.md` 恢复 |
@@ -30,6 +31,7 @@ skills/
 novel/
   context-brief.md  # 压缩入口文件 + 章节状态
   outline.md        # 完整章节大纲 + Milestone 标记
+  market-brief.md   # 目标读者、类型承诺、核心钩子、风格契约
   characters.md     # 静态人物设定
   world.md          # 静态世界规则，可选
   story-state.md    # 动态长篇记忆
@@ -44,6 +46,7 @@ novel/
 | 层级 | 文件 | 用途 |
 |------|------|------|
 | 入口状态 | `context-brief.md` | 每次会话第一个读的小文件：故事 premise、压缩角色卡、进度、下一章、状态快照 |
+| 读者契约 | `market-brief.md` | 短小保存目标读者、核心承诺、钩子和风格约束 |
 | 静态计划 | `outline.md` | 三幕结构、每章目标、关键转折点、Milestone 列 |
 | 静态正典 | `characters.md`, `world.md` | 完整人物设定和世界规则，只在需要时读相关段落 |
 | 动态状态 | `story-state.md` | 当前欲望、隐藏压力、关系温度、未回收线索、世界事实、禁忘项 |
@@ -64,7 +67,7 @@ novel/
 3. 一次性批量提问：类型、视角、主角、反派、主线、世界观、篇幅。
 4. 整理工作摘要，等待用户确认。
 5. 根据模板生成项目文件。
-6. 校验章节数、Milestone、人物覆盖、`context-brief.md` 长度、`story-state.md` 和 `thread-ledger.md` 结构。
+6. 校验章节数、Milestone、人物覆盖、`market-brief.md`、`context-brief.md` 长度、`story-state.md` 和 `thread-ledger.md` 结构。
 7. 交给 `novel-write` 开始写作。
 
 这个 Skill 存在的原因很明确：长篇失败往往不是写到一半才失败，而是一开始没有结构化状态。正文开始前，计划必须落到文件里。
@@ -81,6 +84,7 @@ novel/
 | 批量模式 | `batch 5`, `写 3 章` | 连续写 N 章，每章审阅，批次结束暂停 |
 | 全自动模式 | `全部写完`, `一口气写完` | 带安全门的一次性草稿生成 |
 | 审阅模式 | `审阅第 N 章` | 审计已有章节并给出修复选项 |
+| 检查点模式 | `checkpoint`, `十章检查` | 不重写正文，只检查全局一致性、节奏和伏笔健康 |
 
 默认推荐交互模式，因为作者反馈是最强的质量控制。
 
@@ -95,6 +99,8 @@ NovelFlow 遵循 Skill 的渐进加载思想：
 | L3 | 执行具体步骤时 | 按需读取 compression guide、prose guide、review checklist、templates |
 | 项目入口 | 每次写作开始 | 读取 `novel/context-brief.md` |
 | 项目细节 | 当前章节需要时 | 读取 outline、characters、world、story-state、summaries 的相关部分 |
+| 模式细节 | 触发后才加载 | `references/modes.md` 负责批量、全自动、审阅、检查点 |
+| 诊断模块 | 只有需要时 | 当前章 scene blueprint、每 10 章 checkpoint guide |
 
 这样避免两个问题：
 
@@ -102,6 +108,10 @@ NovelFlow 遵循 Skill 的渐进加载思想：
 2. 把关键规则藏在超长文档里，导致模型根本不读。
 
 `SKILL.md` 只保留流程骨架；详细规则放在 `references/`；模板放在 `references/templates/`。
+
+## Skill 测试
+
+仓库提供 `skills/novel-write/references/testing-scenarios.md` 作为压力测试场景。建议用新 agent 测试：能否正确路由模式、是否只读必要文件、是否每章更新全部状态文件、是否在 P2 或自动化安全门触发时暂停。
 
 ## 每章上下文如何组装
 
@@ -111,6 +121,7 @@ NovelFlow 遵循 Skill 的渐进加载思想：
 1. Foundation
    - premise
    - 类型 / 视角
+   - 目标读者 / 核心承诺 / 风格契约
    - 压缩角色卡
 
 2. Dynamic State
@@ -141,6 +152,7 @@ NovelFlow 遵循 Skill 的渐进加载思想：
 
 7. Current Writing Instruction
    - 本章标题、目标事件、Milestone 约束
+   - 内部生成的 3-6 个场景节拍
 ```
 
 这给模型三类记忆：
@@ -149,6 +161,7 @@ NovelFlow 遵循 Skill 的渐进加载思想：
 |----------|------|
 | 这个故事是什么 | `context-brief.md`, `outline.md` |
 | 现在什么最不稳定 | `story-state.md` |
+| 读者期待和文风契约是什么 | `market-brief.md` |
 | 以后必须回收什么 | `thread-ledger.md` |
 | 之前发生过什么 | `summaries.md` + 上一章全文 |
 
@@ -245,14 +258,25 @@ planned -> planted -> closed-red-herring
 Step 0: 从 context-brief.md 恢复状态
 Step 1: 读取 story-state、outline、summaries、上一章全文
 Step 2: 检测 Milestone 约束
-Step 3: 内部规划：场景、人物节拍、状态义务、信息揭示
+Step 3: 用当前章 scene blueprint 做内部规划
 Step 4: 写完整章节
-Step 5: 按 P0/P1/P2 审阅
+Step 5: 按 P0/P1/P2 审阅，并只做一轮 P1 修订
 Step 6: 更新章节正文、summaries、story-state、thread-ledger、progress、context-brief
 Step 7: 暂停等待作者反馈
 ```
 
 注意：一章不是“正文生成完”就完成。只有记忆文件也更新完，这章才算完成。
+
+## 轻量 MVP 增强
+
+NovelFlow 暂时不引入全书场景数据库、强制多 Agent、无限重写循环这类重型系统。当前只补四个边界清晰的模块：
+
+| 模块 | 为什么不会撑爆上下文 |
+|------|----------------------|
+| 市场定位 | `market-brief.md` 小于 1500 字，写作只读 2-4 条 |
+| 当前章场景蓝图 | 只在 Step 3 内部生成，不默认持久化，不规划全书 |
+| 单轮修订 | P0 直接修，P1 只修一轮，剩余创作判断升为 P2 |
+| 十章检查点 | 只做诊断报告，优先读摘要和账本，不全量读章节正文 |
 
 ## 质量防线
 
@@ -267,6 +291,7 @@ NovelFlow 不依赖单一句“请保持一致”。它用多层防线。
 | Summary first-sentence rule | 远期记忆变成“气氛紧张”这种废摘要 |
 | `story-state.md` 检查 | 忘掉未回收线索、关系漂移、禁忘项冲突 |
 | `thread-ledger.md` 检查 | 伏笔未回收、伪线索未关闭、正文种下线索但账本未记录 |
+| 十章检查点 | 在问题变成大修之前发现全局漂移 |
 
 严重级别：
 
@@ -330,7 +355,7 @@ AGENTS.md
 
 1. 把相关 `SKILL.md` 作为流程指令加载。
 2. 每次写作先读 `novel/context-brief.md`。
-3. 只有 Skill 要求时才读取 references。
+3. 只有 Skill 要求时才读取 references；非交互模式触发后再读 `references/modes.md`。
 4. 每章写完后更新 `summaries.md`、`story-state.md`、`thread-ledger.md`、`progress.md`、`context-brief.md`。
 
 如果是在 ChatGPT / Claude Chat 这种没有文件工具的环境，先生成单次上下文包：
@@ -342,12 +367,13 @@ python scripts/build-context-pack.py --novel-dir novel --chapter auto --include-
 然后把 `context-pack.md` 粘进聊天窗口。这个包里包含：
 
 1. `context-brief.md`
-2. `story-state.md` 相关部分
-3. `thread-ledger.md` 相关行
-4. 当前章 outline 行
-5. 上一章全文
-6. 金字塔压缩后的前文摘要
-7. 需要时粘入审阅清单
+2. `market-brief.md`
+3. `story-state.md` 相关部分
+4. `thread-ledger.md` 相关行
+5. 当前章 outline 行
+6. 上一章全文
+7. 金字塔压缩后的前文摘要
+8. 需要时粘入审阅清单
 
 ## License
 

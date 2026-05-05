@@ -15,7 +15,8 @@ cp -r novel-write ~/.claude/skills/
 | "start", "continue" | Interactive | One chapter → review → pause for feedback |
 | "batch 5" | Batch | N chapters → review each → pause after N |
 | "write all" | Full-Auto | All remaining (with pre-flight check + safety gates) |
-| "review" | Review | Structured 4-step audit with fix options |
+| "review" | Review | Structured audit with fix options |
+| "checkpoint" | Checkpoint | Global consistency/payoff audit without rewriting |
 
 ## Per-Chapter Flow
 
@@ -26,7 +27,7 @@ Step 2: Detect milestone chapters (from outline's Milestone column)
 Step 3: Internal plan (scenes, character beats, voice match, reveals)
 Step 4: Write (anti-decay rules enforced)
 Step 5: Self-review (P0 auto-fix / P1 fix+log / P2 flag only)
-Step 6: Update files (chapter + summary + story-state + progress + context-brief)
+Step 6: Update files (chapter + summary + story-state + thread-ledger + progress + context-brief)
 Step 7: Pause for feedback
 ```
 
@@ -58,10 +59,14 @@ Step 7: Pause for feedback
 | Level | Content | When |
 |-------|---------|------|
 | L1 | name + description | Session start |
-| L2 | SKILL.md (255 lines) | Skill invoked |
+| L2 | SKILL.md | Skill invoked |
+| L3 | references/modes.md | Batch / Full-Auto / Review / Checkpoint only |
 | L3 | references/compression-guide.md | Step 1 |
+| L3 | references/scene-blueprint.md | Step 3 |
 | L3 | references/prose-guide.md | Step 4 |
 | L3 | references/review-checklist.md | Step 5 |
+| L3 | references/checkpoint-guide.md | Checkpoint mode only |
+| L3 | references/testing-scenarios.md | Skill evaluation only |
 
 ## Dependencies
 

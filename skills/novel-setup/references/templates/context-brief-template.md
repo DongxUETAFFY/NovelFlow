@@ -7,6 +7,10 @@
 **POV / 视角:** {{POINT_OF_VIEW}}
 **Ending / 结局方向:** {{ENDING_DIRECTION}}
 
+## Market Snapshot / 读者承诺
+<!-- 2-4 bullets copied from market-brief.md. Keep this tiny. -->
+{{MARKET_SNAPSHOT_BULLETS}}
+
 ## Characters / 角色卡（压缩版）
 *1-2 lines each: name, role, core traits, arc position*
 *每人 1-2 行：名字、身份、核心特质、当前弧线位置*

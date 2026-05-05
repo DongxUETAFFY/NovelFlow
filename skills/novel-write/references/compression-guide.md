@@ -33,10 +33,11 @@ Extract from the project files:
 
 1. **Premise** — from `novel/outline.md`, the one-sentence premise
 2. **Genre & POV** — from the outline header
-3. **Character Cards** — from `novel/characters.md`, condensed: name, role, 3 key traits, current arc status (where they are in their journey at this point in the novel)
-4. **Dynamic State** — from `novel/story-state.md`, only the current pressure, relevant character rows, active open threads, continuity locks, and relationship shifts for this chapter
-5. **Thread Ledger** — from `novel/thread-ledger.md`, only threads planted in C, due in C/C+1, mentioned by C's outline row, or high-risk if forgotten
-6. **Outline Context** — from `novel/outline.md`, the table rows for:
+3. **Market Snapshot** — from `novel/market-brief.md` or `context-brief.md`, only target reader, core promise, hook, and style contract
+4. **Character Cards** — from `novel/characters.md`, condensed: name, role, 3 key traits, current arc status (where they are in their journey at this point in the novel)
+5. **Dynamic State** — from `novel/story-state.md`, only the current pressure, relevant character rows, active open threads, continuity locks, and relationship shifts for this chapter
+6. **Thread Ledger** — from `novel/thread-ledger.md`, only threads planted in C, due in C/C+1, mentioned by C's outline row, or high-risk if forgotten
+7. **Outline Context** — from `novel/outline.md`, the table rows for:
    - Chapter C-1 (where we just were)
    - Chapter C (what we're writing now)
    - Chapter C+1 (where we're going next)
@@ -73,7 +74,7 @@ For chapter C, for each previous chapter i (1 to C-1):
 
 Assemble in this order for the generation prompt:
 
-1. Foundation (premise, genre, POV)
+1. Foundation (premise, genre, POV, market snapshot)
 2. Character cards (all characters, condensed)
 3. Dynamic state from story-state.md
 4. Relevant thread-ledger rows
@@ -83,7 +84,8 @@ Assemble in this order for the generation prompt:
 8. Tier 3: Moderate summaries (ch C-6 → C-4, chronological)
 9. Tier 2: Detailed summaries (ch C-3 → C-2, chronological)
 10. Voice Anchor: Full text of chapter C-1
-11. Writing instruction for chapter C
+11. Current-chapter scene blueprint (internal only, generated from `references/scene-blueprint.md`)
+12. Writing instruction for chapter C
 
 This chronological-then-reverse-proximity order creates a natural narrative flow that builds toward the current moment.
 

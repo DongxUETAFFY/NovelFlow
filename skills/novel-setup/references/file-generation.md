@@ -47,7 +47,20 @@ For relationships, map the key dynamics between major characters.
 
 If needed, read the template at `references/templates/world-template.md` and fill it. Focus on rules and constraints (what's possible, what's forbidden) — these matter more for consistency than aesthetic descriptions.
 
-## 4e: Generate `novel/progress.md`
+## 4e: Generate `novel/market-brief.md`
+
+Read the template at `references/templates/market-brief-template.md`. Fill it from confirmed user input and the Phase 3 summary.
+
+**Purpose:** `market-brief.md` is a lightweight writing contract, not a marketing research report. It tells novel-write what reader promise and prose style to preserve across long drafting.
+
+Requirements:
+- Keep the full file under 1500 characters.
+- Include target reader, platform/genre lane, core promise, hook, reader pleasures, content boundaries, and style contract.
+- If the user did not specify a field, write `unknown yet` instead of inventing market facts.
+- Do not make unsupported claims like "this will sell well" or fabricated platform trends.
+- Copy only 2-4 highest-value bullets into `context-brief.md` as the Market Snapshot.
+
+## 4f: Generate `novel/progress.md`
 
 Read the template at `references/templates/progress-template.md`. Fill it with:
 - Novel metadata (title, date)
@@ -55,7 +68,7 @@ Read the template at `references/templates/progress-template.md`. Fill it with:
 - Initial statistics (total planned chapters filled, written = 0)
 - Empty foreshadowing tracker and revision log
 
-## 4f: Generate `novel/story-state.md`
+## 4g: Generate `novel/story-state.md`
 
 Read the template at `references/templates/story-state-template.md`. Fill it with dynamic state that will change during drafting.
 
@@ -68,7 +81,7 @@ Initial requirements:
 - Continuity Locks: 5-12 short facts that must never drift
 - Keep the file concise. This is a working memory file, not a second outline.
 
-## 4g: Generate `novel/thread-ledger.md`
+## 4h: Generate `novel/thread-ledger.md`
 
 Read the template at `references/templates/thread-ledger-template.md`. Fill it with planned foreshadowing, mysteries, planted objects, emotional promises, red herrings, and delayed consequences.
 
@@ -82,7 +95,7 @@ Initial requirements:
 - Set `Payoff Form` from the template values
 - Keep minor atmosphere motifs out unless they create a future obligation
 
-## 4h: Initialize `novel/summaries.md`
+## 4i: Initialize `novel/summaries.md`
 
 Create this file with initial content:
 ```markdown
@@ -91,13 +104,14 @@ Create this file with initial content:
 *Summaries are added by novel-write after each chapter is generated. Each entry includes the chapter's key events, character developments, and narrative significance.*
 ```
 
-## 4i: Generate `novel/context-brief.md`
+## 4j: Generate `novel/context-brief.md`
 
 Read the template at `references/templates/context-brief-template.md`. Fill it with compressed versions of all novel data. The context-brief.md is the **entry point for every writing session** — any agent reads this file first to know what the novel is, who the characters are, and where writing stopped.
 
 Requirements:
 - Total file: < 5000 characters. Any agent should read it in one glance.
 - Character cards: each character in 1-2 lines only — name, role, 2-3 keywords, arc start→end
+- Market snapshot: 2-4 bullets copied from `market-brief.md`, not the full file
 - State snapshot: 3-6 bullets copied from `story-state.md` covering current pressure, unresolved threads, and continuity locks
 - Thread snapshot: 2-5 high-risk or soon-due items copied from `thread-ledger.md`
 - Chapter table: all chapters from outline, all initially `planned`

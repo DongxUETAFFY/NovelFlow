@@ -3,6 +3,7 @@
 
 The pack includes:
 - context-brief.md
+- market-brief.md when available
 - story-state.md when available
 - thread-ledger.md relevant rows when available
 - outline rows for C-1/C/C+1
@@ -153,6 +154,7 @@ def build_pack(novel_dir: Path, chapter: Optional[int], include_review: bool) ->
         raise SystemExit("Could not infer next chapter. Pass --chapter N.")
 
     outline = read_text(novel_dir / "outline.md")
+    market_brief = read_text(novel_dir / "market-brief.md")
     story_state = read_text(novel_dir / "story-state.md")
     thread_ledger = read_text(novel_dir / "thread-ledger.md")
     summaries = parse_summaries(read_text(novel_dir / "summaries.md"))
@@ -177,22 +179,25 @@ def build_pack(novel_dir: Path, chapter: Optional[int], include_review: bool) ->
         "## 1. Context Brief",
         context_brief.strip(),
         "",
-        "## 2. Story State",
+        "## 2. Market Brief",
+        market_brief.strip() if market_brief else "_Missing market-brief.md. Continue from the Market Snapshot in context-brief.md if present._",
+        "",
+        "## 3. Story State",
         story_state.strip() if story_state else "_Missing story-state.md. Create it before or after this chapter using the NovelFlow template._",
         "",
-        "## 3. Immediate Outline Rows (C-1 / C / C+1)",
+        "## 4. Immediate Outline Rows (C-1 / C / C+1)",
         "\n".join(outline_rows) if outline_rows else "_No matching outline rows found._",
         "",
-        "## 4. Relevant Thread Ledger Rows",
+        "## 5. Relevant Thread Ledger Rows",
         "\n".join(thread_rows) if thread_rows else "_No due or directly relevant thread-ledger rows found._",
         "",
-        "## 5. Pyramid-Compressed Previous Summaries",
+        "## 6. Pyramid-Compressed Previous Summaries",
         "\n\n".join(compressed) if compressed else "_No prior summaries available._",
         "",
-        "## 6. Voice Anchor: Previous Chapter Full Text",
+        "## 7. Voice Anchor: Previous Chapter Full Text",
         previous_chapter.strip() if previous_chapter else "_No previous chapter full text. This is likely Chapter 1._",
         "",
-        "## 7. Writing Task",
+        "## 8. Writing Task",
         f"Write Chapter {current}. Preserve all continuity constraints above. After drafting, provide:",
         "- the chapter text",
         "- a chapter summary whose first sentence contains named character + concrete event + directional consequence",
@@ -202,7 +207,7 @@ def build_pack(novel_dir: Path, chapter: Optional[int], include_review: bool) ->
     ]
 
     if include_review:
-        parts.extend(["", "## 8. Review Checklist", review_checklist.strip()])
+        parts.extend(["", "## 9. Review Checklist", review_checklist.strip()])
 
     return "\n\n".join(parts).rstrip() + "\n"
 

@@ -14,6 +14,7 @@ The project is packaged as Claude Code Skills, but the core design is plain Mark
 | Avoid context window overflow | Load skill references and project files progressively, only when needed |
 | Keep prose style continuous | Include the previous chapter full text as a voice anchor |
 | Preserve long-range plot memory | Use pyramid compression: near chapters detailed, distant chapters one-line |
+| Preserve reader promise and style | Keep a short `market-brief.md` instead of loading a large market document |
 | Stop late-novel quality decay | Run structural health checks from chapter 30 onward |
 | Protect emotional milestones | Mark milestone chapters in the outline and force extra scene development |
 | Support cross-session work | Resume from `novel/context-brief.md` and `novel/story-state.md` |
@@ -30,6 +31,7 @@ skills/
 novel/
   context-brief.md  # Compressed entry point and chapter status
   outline.md        # Full chapter plan with milestone markers
+  market-brief.md   # Target reader, genre promise, hook, style contract
   characters.md     # Static character bible
   world.md          # Static world rules, optional
   story-state.md    # Dynamic long-form memory
@@ -44,6 +46,7 @@ The key design choice is separation between **static canon**, **dynamic state**,
 | Layer | File | Purpose |
 |-------|------|---------|
 | Entry state | `context-brief.md` | Small file read first every session: premise, compressed character cards, progress, next chapter, state snapshot |
+| Reader contract | `market-brief.md` | Short target-reader, hook, core promise, and style contract used as a writing guardrail |
 | Static plan | `outline.md` | Chapter-by-chapter plan, act structure, turning points, milestone column |
 | Static canon | `characters.md`, `world.md` | Full character and world rules that should not be loaded unless relevant |
 | Dynamic state | `story-state.md` | Current wants, hidden pressures, relationship temperature, open threads, continuity locks |
@@ -64,7 +67,7 @@ Workflow:
 3. Ask a batched discovery questionnaire covering genre, POV, protagonist, antagonist, plot, world, and scope.
 4. Synthesize a working summary and wait for user confirmation.
 5. Generate the project files from templates.
-6. Validate chapter count, milestone values, character coverage, `context-brief.md` size, `story-state.md`, and `thread-ledger.md`.
+6. Validate chapter count, milestone values, character coverage, `market-brief.md`, `context-brief.md` size, `story-state.md`, and `thread-ledger.md`.
 7. Hand off to `novel-write`.
 
 The setup Skill exists because long novels fail early if the model starts drafting before structure exists. The plan must become files before chapter generation begins.
@@ -81,6 +84,7 @@ Modes:
 | Batch | `batch 5`, `write 3 chapters` | Write N chapters, review each, pause after the batch |
 | Full-auto | `write all`, `一口气写完` | Write all remaining chapters with safety gates |
 | Review | `review chapter N` | Audit an existing chapter and offer fixes |
+| Checkpoint | `checkpoint`, `十章检查` | Audit global consistency, pacing, and payoff health without rewriting |
 
 The default is interactive mode because author feedback is the strongest quality control loop.
 
@@ -95,6 +99,8 @@ NovelFlow follows the Skill progressive disclosure pattern:
 | L3 | Specific step | References such as compression guide, prose guide, review checklist, templates |
 | Project entry | Every writing session | `novel/context-brief.md` |
 | Project detail | Only if needed | Relevant rows/sections from outline, characters, world, story-state, summaries |
+| Mode details | Only after trigger | `references/modes.md` for batch, full-auto, review, checkpoint |
+| Diagnostic modules | Only on demand | Scene blueprint for current-chapter planning, checkpoint guide for 10-chapter audits |
 
 This prevents two common failures:
 
@@ -102,6 +108,10 @@ This prevents two common failures:
 2. Hiding important rules in huge documents the model never reads.
 
 `SKILL.md` files stay procedural. Detailed material lives in `references/` and templates. The agent reads them at the exact step where they matter.
+
+## Skill Evaluation
+
+NovelFlow includes pressure scenarios in `skills/novel-write/references/testing-scenarios.md`. Use them with a fresh agent to verify that the Skill routes correctly, does not load the whole project up front, updates all required state files, and pauses on P2 or automation guard failures.
 
 ## Chapter Context Assembly
 
@@ -111,6 +121,7 @@ When writing Chapter C, NovelFlow assembles context in a fixed order:
 1. Foundation
    - premise
    - genre / POV
+   - target reader / core promise / style contract
    - compressed character cards
 
 2. Dynamic state
@@ -141,6 +152,7 @@ When writing Chapter C, NovelFlow assembles context in a fixed order:
 
 7. Current writing instruction
    - chapter title, target events, milestone constraints
+   - silently generated 3-6 beat scene blueprint
 ```
 
 This gives the model three kinds of memory:
@@ -149,6 +161,7 @@ This gives the model three kinds of memory:
 |-------------|-----------|
 | What the story is | `context-brief.md`, `outline.md` |
 | What is currently unstable | `story-state.md` |
+| What reader promise to preserve | `market-brief.md` |
 | What must pay off later | `thread-ledger.md` |
 | What already happened | `summaries.md` + previous chapter full text |
 
@@ -251,14 +264,25 @@ Interactive mode runs this loop:
 Step 0: Restore state from context-brief.md
 Step 1: Assemble context from story-state, outline, summaries, previous chapter
 Step 2: Detect milestone constraints
-Step 3: Plan internally: scenes, character beats, state obligations, reveals
+Step 3: Plan internally with a current-chapter scene blueprint
 Step 4: Write the chapter
-Step 5: Review with P0/P1/P2 severity
+Step 5: Review with P0/P1/P2 severity and one focused P1 pass
 Step 6: Update chapter file, summaries, story-state, thread-ledger, progress, context-brief
 Step 7: Pause for author feedback
 ```
 
 The loop is intentionally stateful. A chapter is not complete when text is generated. It is complete only after the memory files are updated.
+
+## Lightweight MVP Additions
+
+NovelFlow intentionally avoids heavyweight features like full-book scene databases or mandatory multi-agent pipelines. The MVP adds only four bounded modules:
+
+| Module | How It Stays Lightweight |
+|--------|---------------------------|
+| Market brief | One short file under 1500 characters; writing reads only 2-4 bullets |
+| Scene blueprint | Generated silently for the current chapter only; not persisted by default |
+| One-pass revision | P0 fixes plus one P1 pass; unresolved creative problems become P2 |
+| 10-chapter checkpoint | Diagnostic report only; reads summaries and ledgers before chapter files |
 
 ## Quality Gates
 
@@ -273,6 +297,7 @@ NovelFlow uses defense in depth instead of trusting one prompt instruction.
 | Summary first-sentence rule | Distant memory becoming vague |
 | `story-state.md` checks | Forgotten open threads, relationship drift, continuity lock violations |
 | `thread-ledger.md` checks | Missed payoff, dropped red herrings, untracked planted clues |
+| 10-chapter checkpoint | Global drift before it becomes expensive to repair |
 
 Severity levels:
 
@@ -336,7 +361,7 @@ For a custom agent:
 
 1. Load the relevant `SKILL.md` as procedural instruction.
 2. Start every writing session by reading `novel/context-brief.md`.
-3. Read references only when the Skill says to.
+3. Read references only when the Skill says to; for non-interactive modes, read `references/modes.md` after mode detection.
 4. Update `summaries.md`, `story-state.md`, `thread-ledger.md`, `progress.md`, and `context-brief.md` after every chapter.
 
 For ChatGPT or Claude Chat without file tools, build a single context pack:
@@ -348,12 +373,13 @@ python scripts/build-context-pack.py --novel-dir novel --chapter auto --include-
 Then paste `context-pack.md` into the chat. The pack contains:
 
 1. `context-brief.md`
-2. relevant `story-state.md` sections
-3. relevant `thread-ledger.md` rows
-4. current outline row
-5. previous chapter full text
-6. pyramid-compressed summaries
-7. review checklist if needed
+2. `market-brief.md`
+3. relevant `story-state.md` sections
+4. relevant `thread-ledger.md` rows
+5. current outline row
+6. previous chapter full text
+7. pyramid-compressed summaries
+8. review checklist if needed
 
 ## License
 

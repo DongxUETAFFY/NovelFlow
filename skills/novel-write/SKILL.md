@@ -1,6 +1,6 @@
 ---
 name: novel-write
-description: Context-aware novel chapter generation with pyramid compression, auto-review, and anti-decay protection. Triggers on "write a chapter", "continue", "next chapter", "batch N", "write all", "review", "开始写", "继续", "一口气写完", "审阅". Supports interactive, batch, full-auto, and review modes.
+description: Use when writing, continuing, batch-writing, reviewing, or checkpointing long-form novel chapters while preserving outline, character, continuity, foreshadowing, market, and compressed context state. Trigger on "continue", "next chapter", "batch N", "write all", "review", "checkpoint", "继续", "审阅", "十章检查".
 ---
 
 # Novel Write
@@ -21,6 +21,19 @@ If the user provides an idea → transition to novel-setup Phase 1 flow (ask que
 | **Interactive** (default) | "write a chapter", "continue", "next chapter" | Write one chapter → show summary → **pause for feedback** → wait for user before continuing |
 | **Batch** | "batch 5", "write 3 chapters", "一口气写5章" | Write N chapters continuously → pause for feedback. Safer middle ground between interactive and full-auto |
 | **Full-Auto** | "write all", "all", "一口气写完", "全部写完" | Write ALL remaining chapters. Requires pre-flight acknowledgment. Refuses if >30 chapters remain |
+| **Review** | "review", "审阅", "review chapter N" | Review an existing chapter and offer fixes |
+| **Checkpoint** | "checkpoint", "10-chapter check", "十章检查", "全书检查" | Audit global consistency and payoff health without drafting new prose |
+
+For Batch, Full-Auto, Review, and Checkpoint detailed workflows, read `references/modes.md` only after that mode is triggered. Do not load mode details during normal Interactive writing.
+
+Reference loading by mode:
+
+| Triggered Mode | Read |
+|----------------|------|
+| Interactive | `references/compression-guide.md`, `references/scene-blueprint.md`, `references/prose-guide.md`, `references/review-checklist.md` at their steps |
+| Batch / Full-Auto | `references/modes.md`, then the normal Interactive step references as chapters are written |
+| Review | `references/modes.md` and `references/review-checklist.md` |
+| Checkpoint | `references/modes.md` and `references/checkpoint-guide.md` |
 
 ---
 
@@ -41,6 +54,7 @@ Foundation is already in context-brief.md. Now read only what's **necessary** fo
 - `novel/outline.md` — read the table rows for chapters C-1, C, and C+1 to understand immediate narrative context (where we just were, what we're writing now, where we're going next)
 - `novel/story-state.md` — read current narrative pressure, character state rows for characters in C, open threads relevant to C, and continuity locks
 - `novel/thread-ledger.md` — read only threads planted in C, due in C/C+1, mentioned by C's outline row, or high-risk if forgotten
+- `novel/market-brief.md` — read only 2-4 bullets: target reader, core promise, hook, and style contract. If missing, continue from context-brief.md.
 - `novel/summaries.md` — apply pyramid compression per `references/compression-guide.md`
 - Previous chapter full text (if any) as Voice Anchor. Skip for Chapter 1.
 - If this chapter involves specific world-building rules, read relevant sections of `novel/world.md` (not the whole file)
@@ -81,6 +95,8 @@ Note this constraint before proceeding to planning.
 
 ### Step 3: Internal Planning
 
+Read `references/scene-blueprint.md` now. Use it to create a short current-chapter scene blueprint silently.
+
 Plan this chapter's structure silently. Consider:
 
 - **Scene count**: Identify at least one fully-developed scene — a specific moment in a specific place with sensory detail, character action, and live dialogue. For milestone chapters, plan 2-3 developed scenes minimum.
@@ -90,6 +106,7 @@ Plan this chapter's structure silently. Consider:
 - **Voice matching**: Read the first 3 paragraphs of the previous chapter. Match that cadence, sentence rhythm, and sensory density.
 - **Information reveals**: What does the reader learn? What remains hidden?
 - **Scene vs summary**: For each story beat in the outline, decide: will this be a rendered scene or a bridging summary? At least one beat must be a scene.
+- **Market/style contract**: Preserve the reader promise and prose contract from `market-brief.md` or the Market Snapshot.
 
 Do not output this plan.
 
@@ -110,8 +127,10 @@ Format: `# Chapter {N}: {title}` header, scene breaks with `---` on its own line
 Read `references/review-checklist.md`. Run the full checklist.
 
 - **P0**: Auto-fix immediately (spelling, names, tense, duplicates, placeholders)
-- **P1**: Fix and record in progress.md Review Notes
+- **P1**: Apply one local revision pass and record in progress.md Review Notes
 - **P2**: Flag for author — do NOT change
+
+**One-pass revision loop:** Do not run open-ended rewrite cycles. After the checklist, apply P0 fixes and one focused P1 pass. If quality still needs creative judgment or a second structural rewrite, classify it as P2 and pause.
 
 **From chapter 30 onward**: Pay extra attention to Section 5 (Structural Health). Check scene density, dialogue ratio, sensory benchmark, chapter length trend. The natural tendency is decay — actively guard against it.
 
@@ -136,6 +155,8 @@ Read `references/review-checklist.md`. Run the full checklist.
 
 When updating summaries.md, write a full detailed summary (not a one-liner). This summary will be pyramid-compressed for future chapters — its first sentence and first 100 words are especially important.
 
+If the completed chapter count is now a multiple of 10, recommend Checkpoint Mode before continuing. Do not run it automatically unless the user requested batch/full-auto and no guard has paused the run.
+
 ### Step 7: Pause for Feedback
 
 Display a brief summary (~150-200 words) and ask:
@@ -149,145 +170,11 @@ Display a brief summary (~150-200 words) and ask:
 **Context reminder:** If the completed chapter count is a multiple of 5 (5, 10, 15...), append:
 > {N} chapters written. Conversation context is accumulating. Consider starting a new conversation and running /novel-write — progress is saved in context-brief.md and will resume from chapter {N+1}.
 
----
-
-## Batch Mode Flow
-
-Triggered by: "batch N", "write N chapters", "一口气写N章", "批量N章".
-
-### Pre-flight
-
-Report to the user:
-> Writing chapters {C} through {C+N-1} ({N} chapters, {remaining_after} remaining after). I'll pause after chapter {C+N-1} for your feedback.
-
-Then proceed.
-
-### Execution
-
-Loop Step 1-6 for N chapters. Report after each chapter (brief: chapter number + word count + P0/P1/P2 count). **Pause after chapter C+N-1** and ask:
-> **{N} chapters complete** ({C}-{C+N-1}). Continue with the next batch, or want to adjust anything?
-
-### Batch Constraints (same as full-auto but scoped to the batch)
-
-- **P2 issue**: Pause immediately
-- **Single-chapter quality flood**: 3+ P1 issues in one chapter → pause
-- **Decay guard**: 2 consecutive chapters with P1 structural warnings → pause
-- **Milestone chapters**: If a milestone chapter falls within the batch, enforce milestone protection rules (≥ average chapter length, ≥ 2 developed scenes)
+If N is a multiple of 10, also append:
+> This is a good point for a lightweight checkpoint. Say "checkpoint" / 「十章检查」 to audit continuity, pacing, and payoff health before continuing.
 
 ---
 
-## Full-Auto Mode Flow
+## Non-Interactive Modes
 
-Triggered by: "write all", "all", "一口气写完", "全部写完", "don't ask, just write", "别问我了".
-
-### Step A: Pre-Flight Check (MANDATORY)
-
-Before writing a single chapter, assess the situation and report to the user:
-
-1. Count remaining chapters (planned chapters not yet written)
-2. Apply these rules:
-
-| Condition | Action |
-|-----------|--------|
-| **>30 chapters remaining** | **Refuse full-auto.** Say: "There are {N} chapters remaining — too many for full-auto. Quality decays measurably after ~15 chapters in a single session. Let's use **batch mode** instead: I'll write 5-10 chapters at a time, pause for your feedback, then continue. Say 'batch 10' to start." |
-| **15-30 chapters remaining** | **Warn and ask.** Say: "There are {N} chapters remaining. Full-auto can handle this, but quality tends to decay after chapter ~45. I'll enforce structural health checks every chapter from chapter 30 onward, and pause on any decay signals. **Continue with full-auto, or switch to batch mode** (5-10 chapters at a time)?" |
-| **<15 chapters remaining** | **Acknowledge and proceed.** Say: "{N} chapters remaining. I'll write them all and enforce quality constraints. Pausing only on issues." |
-
-3. **Wait for user confirmation** before starting. If the user says "just do it" or "别问了直接写" after a warning, proceed. If they said this in their initial message and the remaining count is ≤30, proceed directly.
-
-### Step B: Execution
-
-Loop Step 1-6 for each remaining chapter. Report after each chapter:
-
-> Ch{N} 「{title}」 · {word_count}字 · P0:{n} P1:{n} P2:{n} · [{chapter_number}/{total_remaining}]
-
-### Constraints (enforced every chapter)
-
-**Must pause immediately:**
-
-| Guard | Trigger |
-|-------|---------|
-| **P2 issue** | Any P2 flag in the review |
-| **Quality flood** | 3+ P1 issues in a single chapter |
-| **Decay signal** | 2 consecutive chapters with P1 structural health warnings (Section 5) |
-| **Milestone underdevelopment** | A detected milestone chapter is shorter than the novel's average |
-
-**Must enforce every chapter:**
-
-- At least one fully-developed scene (specific place + body + real-time + interaction)
-- At least 3 distinct senses engaged in first 500 words
-- Emotional beats rendered as live dialogue/action, not reported speech
-
-### Step C: Completion Report
-
-After the final chapter, output:
-- Chapter list with word counts
-- Total word count
-- P0/P1/P2 summary
-- Structural health trend (any decay detected?)
-- Recommendation: "Review chapters {X-Y} before publishing — [specific concerns]"
-
----
-
-## Review Mode
-
-Triggered by: "review", "审阅", "check the last chapter", "review chapter N".
-
-### Step R0: Identify Target
-
-- If user says "review" / 「审阅」 without a chapter number → target the most recent non-`planned` chapter
-- If user specifies a chapter number → target that chapter
-- If the target chapter doesn't exist → report and stop
-
-Confirm: "Reviewing Chapter {N}: {title}."
-
-### Step R1: Assemble Review Context
-
-Read the target chapter in full. Then read the minimum context needed:
-
-- The chapter's outline entry (what was it supposed to accomplish?)
-- The Voice Anchor chapter (chapter N-1) — to check continuity
-- `novel/characters.md` entries for characters appearing in this chapter — to check consistency
-- `novel/world.md` if world rules are relevant
-- `novel/progress.md` — to check foreshadowing threads relevant to this chapter
-- `novel/story-state.md` — to check current character state, relationship temperature, open threads, world facts, and continuity locks
-- `novel/thread-ledger.md` — to check foreshadowing/payoff lifecycle entries relevant to this chapter
-
-### Step R2: Run Full Review
-
-Read `references/review-checklist.md`. Run ALL 7 sections against the chapter. Do not skip any section.
-
-For each finding, classify as P0 / P1 / P2 and output in a structured report:
-
-```
-## Review: Chapter {N} — {title}
-
-### P0 Issues (auto-fixable)
-- [issue 1]
-- [issue 2]
-
-### P1 Issues (fix recommended)
-- [issue 1]: [evidence from text] → [suggested fix]
-- [issue 2]: [evidence from text] → [suggested fix]
-
-### P2 Issues (requires author decision)
-- [issue 1]: [evidence] → [options for author to consider]
-- [issue 2]: [evidence] → [options for author to consider]
-
-### Structural Health (if ch ≥ 30)
-- Scene density: [pass/fail]
-- Dialogue ratio: [pass/fail]
-- Sensory benchmark: [pass/fail]
-- Length trend: [pass/fail]
-```
-
-### Step R3: Offer Action
-
-After presenting findings, ask:
-
-> **Review complete.** Apply P0 fixes automatically and P1 fixes for review? Or would you prefer to handle everything yourself?
-> - "apply all" / 「全修」 → Apply all P0 + P1 fixes
-> - "apply P0 only" / 「只修P0」 → Apply P0 fixes only
-> - "I'll handle it" / 「我自己来」 → Leave all issues as-is
-
-Do NOT apply fixes without user consent. When applying fixes, update the chapter file and record changes in progress.md's Revision Log.
+For Batch, Full-Auto, Review, and Checkpoint mode details, read `references/modes.md` after detecting the matching trigger. The mode file defines pre-flight checks, context assembly, guardrails, reports, and action boundaries.
