@@ -1,6 +1,6 @@
 ---
 name: novel-write
-description: Use when writing, free-drafting, fragment-continuing, finishing/resuming an abandoned book, batch-writing, reviewing, or checkpointing long-form novel chapters. Trigger on "free draft", "continue this fragment", "finish book intake", "resume abandoned book", "continue", "next chapter", "batch N", "write all", "review", "checkpoint", "续写这段", "续写到完结", "不更新状态", "继续", "审阅", "十章检查".
+description: Use when writing, free-drafting, fragment-continuing, canon-continuing from a provided excerpt, finishing/resuming an abandoned book, batch-writing, reviewing, or checkpointing long-form novel chapters. Trigger on "free draft", "continue this fragment", "continue canon from here", "finish book intake", "resume abandoned book", "continue", "next chapter", "batch N", "write all", "review", "checkpoint", "续写这段", "按全书设定续写", "从这里接入正文继续", "续写到完结", "不更新状态", "继续", "审阅", "十章检查".
 ---
 
 # Novel Write
@@ -20,11 +20,12 @@ If the user provides an idea → transition to novel-setup Phase 1 flow (ask que
 |------|---------|----------|
 | **Free Draft** | "free draft", "draft only", "try a version", "试写", "不更新状态", "跳过记账" | Write without project bookkeeping. Read only context-brief, current outline row, and previous chapter. Do not update state. |
 | **Fragment Continue** | "continue this fragment", "continue from here", "续写这段", "接着这段写", "从这里往下写" | Continue user-provided prose as local voice anchor. Do not update project state or canonical chapter text. |
+| **Canon Continue** | "continue canon from here", "按全书设定续写", "从这里接入正文继续", "作为正式章节继续", "从这段开始继续全书" | Treat the provided fragment as official entry text. Load relevant dynamic state, write canonical prose, create a standard delta, and update state. |
 | **Standard Writing** (default) | "write a chapter", "continue", "next chapter" | Write one chapter, then create a light delta and pause for feedback. |
 | **Production Lock** | "production lock", "严格模式", "稳定推进", batch/full-auto/checkpoint-sensitive work | Full audit, full delta, commit, generated state, and checkpoint guards. |
 | **Batch** | "batch 5", "write 3 chapters", "一口气写5章" | Production Lock unless the user explicitly asks for lighter drafting. |
 | **Full-Auto** | "write all", "all", "一口气写完", "全部写完" | Production Lock only after warning that quality is usually worse; requires explicit confirmation for high-risk runs |
-| **Finish Book Intake** | "finish book intake", "resume abandoned book", "续写到完结", "这本书断了，帮我续完" | Diagnose old/incomplete book, produce intake report and roadmap. Do not write formal chapters yet. |
+| **Finish Book Intake** | "finish book intake", "resume abandoned book", "这本书断了，帮我续完", "续写到完结" when direction/state is unclear | Diagnose old/incomplete book, produce intake report and roadmap. Do not write formal chapters yet. |
 | **Finish Book Run** | User confirms intake roadmap | Continue to ending in Production Lock. |
 | **Review** | "review", "审阅", "review chapter N" | Review an existing chapter and offer fixes |
 | **Checkpoint** | "checkpoint", "10-chapter check", "十章检查", "全书检查" | Audit global consistency and payoff health without drafting new prose |
@@ -37,6 +38,7 @@ Reference loading by mode:
 |----------------|------|
 | Free Draft | `references/prose-guide.md` only if prose guidance is needed |
 | Fragment Continue | `references/fragment-continue.md`; `references/prose-guide.md` only if prose guidance is needed |
+| Canon Continue | `references/prose-guide.md`, `references/chapter-delta.md`; use the fragment to select relevant state rows |
 | Standard Writing | `references/prose-guide.md`, `references/chapter-delta.md`; read review checklist only for obvious problems |
 | Production Lock | `references/compression-guide.md`, `references/scene-blueprint.md`, `references/prose-guide.md`, `references/review-checklist.md`, `references/chapter-delta.md` |
 | Batch / Full-Auto / Finish Book | `references/modes.md`, then the mode-specific references it names |
@@ -52,6 +54,7 @@ Hard rules protect the project:
 - Do not contradict established core character facts, irreversible events, or world rules.
 - Do not drop a promised thread whose payoff is due; pay it off, delay it with a reason, or ask the author.
 - Do not mark project state complete without a chapter delta in Standard Writing or Production Lock.
+- Do not treat a Canon Continue request as draft-only.
 - Do not continue batch/full-auto through P2 continuity problems.
 
 Soft suggestions improve prose but are not red lines:
@@ -94,16 +97,47 @@ If using the helper script:
 python skills/novel-write/scripts/novelflow.py save-fragment-draft --novel-dir novel --text-file {draft_file}
 ```
 
-If the author later says "并入正文", "保存到第 N 章", or "把这段作为正式章节的一部分", switch to Standard Writing: merge into `novel/chapters/chapter-{N}.md`, create a `mode: "standard"` delta, validate, and commit. Never promote fragment continuation to canon automatically.
+If the author later says "并入正文", "保存到第 N 章", "把这段作为正式章节的一部分", "按全书设定续写", or "从这里继续全书", switch to Canon Continue. Never promote fragment continuation to canon automatically.
+
+## Canon Continue Flow
+
+Use when the author provides a fragment and wants it to become part of the official novel continuation.
+
+This is not draft-only. It uses Standard Writing state discipline for one chapter, and Production Lock if the user also asks to continue in batch/full-auto/to the ending.
+
+1. Read `novel/context-brief.md`.
+2. Infer the target chapter from the user instruction, fragment, chapter files, outline status, or next planned chapter in `context-brief.md`.
+3. If the target cannot be inferred, ask one concise question: "这段要接入第几章，还是作为下一章开头？"
+4. Read the current outline row and adjacent rows.
+5. Read relevant `novel/story-state.md` rows:
+   - characters appearing in the fragment or target chapter
+   - current narrative pressure
+   - relationship shifts touched by the fragment
+   - open threads touched by the fragment
+   - continuity locks
+6. Read relevant `novel/thread-ledger.md` rows:
+   - threads mentioned by the fragment
+   - threads due in this chapter or next chapter
+   - high-risk unresolved threads
+7. Read relevant `novel/characters.md` entries and `novel/world.md` sections only when the fragment touches those facts.
+8. Read the previous chapter as voice anchor when available; treat the supplied fragment as the immediate local voice anchor.
+9. Continue the official chapter prose.
+10. Save or merge into `novel/chapters/chapter-{N}.md`.
+11. Create a `mode: "standard"` chapter delta unless the user requested Production Lock, batch/full-auto, or ending run.
+12. Validate, commit, update generated state, and sync legacy exports as needed.
+
+If the user says "从这里开始一直写到完结" or similar:
+- If project state is complete, current chapter is inferable, and the outline contains an ending path, warn that direct full-book continuation is lower quality than supervised batches, then run Finish Book Run in Production Lock.
+- If state is missing, stale, contradictory, or the ending direction is unclear, run Finish Book Intake first.
 
 ## Finish Book Entry
 
 Use when the author asks to resume an abandoned/incomplete book through the ending.
 
-- First run **Finish Book Intake** from `references/modes.md`.
-- Produce an intake report and continuation roadmap.
-- Do not write formal chapter prose or update chapter state before the author confirms the roadmap.
-- After confirmation, run **Finish Book Run** in Production Lock.
+- If project state is missing, stale, contradictory, or the ending direction is unclear, first run **Finish Book Intake** from `references/modes.md`.
+- Produce an intake report and continuation roadmap; do not write formal chapter prose or update chapter state before the author confirms the roadmap.
+- If the project state is complete and the author explicitly says to follow the existing outline directly to the ending, give the full-auto quality warning, then run **Finish Book Run** in Production Lock.
+- After roadmap confirmation, run **Finish Book Run** in Production Lock.
 
 ## Standard Writing Flow
 
@@ -119,7 +153,7 @@ Display a welcome message based on completed chapter count, then proceed to Step
 
 Foundation is already in context-brief.md. Now read only what's **necessary** for this chapter:
 
-In Standard Writing, keep context light. Read `context-brief.md`, the current outline row, and previous chapter. Use generated context packs if they already exist, but do not run a full audit unless there is a continuity risk.
+In Standard Writing, keep context light. Read `context-brief.md`, the current outline row, and previous chapter. Use generated context packs if they already exist, but do not run a full audit unless there is a continuity risk. In Canon Continue, use the provided fragment to decide which character rows, relationship shifts, open threads, and world rules are relevant.
 
 In Production Lock, if local file tools are available and at least one chapter delta has been committed, first run:
 

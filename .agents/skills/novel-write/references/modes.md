@@ -94,6 +94,14 @@ Triggered by: "finish book intake", "resume abandoned book", "续写到完结", 
 
 This is diagnostic. Do not write formal chapter prose and do not update chapter state.
 
+Use Intake when:
+- the book is old or incomplete and the current direction is unclear
+- project state is missing, stale, or contradictory
+- the agent cannot confidently identify the current chapter, open threads, or ending direction
+- the author asks for diagnosis, recovery, or a continuation plan
+
+Do not force Intake when the author explicitly says to follow the existing outline directly to the ending and the project state is complete enough to identify current chapter, ending path, open threads, and continuity locks. In that case, give the full-auto quality warning and enter Finish Book Run in Production Lock.
+
 ### Reading Strategy
 
 Prefer existing structure:
@@ -162,9 +170,11 @@ Do not enter Finish Book Run until the author confirms the roadmap. Allowed befo
 ## Finish Book Run
 
 Entry conditions:
-- Finish Book Intake report exists.
-- Finish Book Roadmap exists.
-- Author explicitly confirmed the roadmap.
+- Finish Book Intake report exists, Finish Book Roadmap exists, and the author explicitly confirmed the roadmap; or
+- the author explicitly requested direct continuation to the ending from the existing outline, project state is complete, current chapter is inferable, and ending path / open threads / continuity locks are identifiable.
+
+Before direct entry without Intake, warn:
+> Direct continuation to the ending is available, but quality is usually worse than supervised batches. I will use Production Lock and stop on P2, unresolved payoff, validation failure, checkpoint drift, or structural decay.
 
 Execution is always Production Lock.
 

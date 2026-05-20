@@ -53,13 +53,17 @@ Only promote when the author explicitly says:
 - "并入正文"
 - "保存到第 N 章"
 - "把这段作为正式章节的一部分"
+- "按全书设定续写"
+- "从这里继续全书"
 - "merge into chapter N"
 
-Then switch to Standard Writing:
+Then switch to Canon Continue:
 
 1. Merge or write into `novel/chapters/chapter-{N}.md`.
-2. Create `mode: "standard"` chapter delta.
-3. Validate and commit delta.
-4. Update generated state / legacy exports as needed.
+2. Load relevant dynamic state rows from `story-state.md` and `thread-ledger.md`.
+3. Read relevant `characters.md` and `world.md` sections only if the fragment touches those facts.
+4. Create `mode: "standard"` chapter delta unless the user asked for Production Lock, batch/full-auto, or ending run.
+5. Validate and commit delta.
+6. Update generated state / legacy exports as needed.
 
 Never mark a fragment continuation complete as a chapter by itself.

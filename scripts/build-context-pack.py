@@ -14,6 +14,7 @@ The pack includes:
 Modes:
 - free-draft: write only, no state update
 - fragment-continue: continue a user-provided fragment, no state update
+- canon-continue: continue a provided fragment as official chapter prose
 - standard: light chapter delta
 - production: full chapter delta and review
 - finish-book-intake: diagnose an abandoned/incomplete book before continuing
@@ -203,6 +204,18 @@ def build_pack(novel_dir: Path, chapter: Optional[int], include_review: bool, mo
             "- a brief note that no project state was updated",
             "- if saving is requested, save as a fragment draft rather than canonical chapter text",
         ]
+    elif mode == "canon-continue":
+        workflow_instruction = (
+            "Canon Continue mode: treat the user-provided fragment as official entry text. "
+            "Use it to select relevant story-state rows, thread-ledger rows, character entries, and world rules. "
+            "Continue canonical chapter prose, then produce a standard chapter delta and state update instructions."
+        )
+        after_drafting = [
+            "- the chapter text continued from the provided fragment",
+            "- a light `mode: \"standard\"` chapter delta JSON",
+            "- hard-rule issues as P0/P1/P2 and craft concerns as `soft_notes`",
+            "- state updates required for story-state, thread-ledger, summaries, progress, and context-brief",
+        ]
     elif mode == "finish-book-intake":
         workflow_instruction = (
             "Finish Book Intake mode: do not write official chapter prose. Diagnose the current book, "
@@ -297,7 +310,7 @@ def main() -> None:
     parser.add_argument(
         "--mode",
         default="standard",
-        choices=("free-draft", "fragment-continue", "standard", "production", "finish-book-intake", "finish-book-run"),
+        choices=("free-draft", "fragment-continue", "canon-continue", "standard", "production", "finish-book-intake", "finish-book-run"),
         help="Context pack mode.",
     )
     parser.add_argument("--include-review", action="store_true", help="Include the full review checklist.")

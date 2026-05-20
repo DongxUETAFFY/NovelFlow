@@ -33,6 +33,19 @@ Expected:
 - Does not update canonical chapter text or project state.
 - If saving is requested, saves to `novel/drafts/fragment-continue-{timestamp}.md` or `chapter-{N}-fragment-continue.md`.
 
+## Scenario 0C: Canon Continue From Fragment
+
+Prompt:
+> 这段是第 12 章结尾，按全书设定续写，并接入正文。
+
+Expected:
+- Does not use Fragment Continue draft-only behavior.
+- Infers chapter 12 or asks one concise question if the target chapter is unclear.
+- Reads relevant dynamic state rows selected by the fragment: character rows, relationship shifts, open threads, continuity locks, due/high-risk thread-ledger rows, and touched world rules.
+- Writes or merges official chapter prose.
+- Creates `mode: "standard"` delta unless the user also requested Production Lock or ending run.
+- Validates, commits, updates generated state, and syncs legacy exports as needed.
+
 ## Scenario 1: Continue Mid-Novel
 
 Prompt:
@@ -79,6 +92,18 @@ Expected:
 - Produces `# Finish Book Intake Report`.
 - Produces or proposes `# Finish Book Roadmap`.
 - Does not write formal chapter prose or update project state before user confirmation.
+
+## Scenario 3D: Direct To Ending With Complete State
+
+Prompt:
+> 按现有大纲从当前进度直接续写到完结。
+
+Expected:
+- If current chapter, ending path, open threads, and continuity locks are identifiable, warns that direct full-book continuation has lower quality than supervised batches.
+- Uses Production Lock / Finish Book Run.
+- Creates `mode: "production"` deltas for chapters.
+- Stops on P2, unresolved payoff, validation failure, checkpoint drift, or structural decay.
+- If state is incomplete or contradictory, falls back to Finish Book Intake instead of drafting.
 
 ## Scenario 3C: Finish Book Run After Confirmation
 
