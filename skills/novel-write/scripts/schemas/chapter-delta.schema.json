@@ -1,0 +1,117 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://novelflow.local/schemas/chapter-delta.schema.json",
+  "title": "NovelFlow Chapter Delta",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["mode", "chapter", "summary", "state_delta", "review"],
+  "properties": {
+    "mode": {
+      "type": "string",
+      "enum": ["standard", "production"],
+      "default": "production"
+    },
+    "chapter": {
+      "type": "integer",
+      "minimum": 1
+    },
+    "summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["first_sentence", "what_happened", "character_developments", "narrative_significance"],
+      "properties": {
+        "first_sentence": { "type": "string", "minLength": 1 },
+        "what_happened": { "type": "string", "minLength": 1 },
+        "character_developments": { "type": "string", "minLength": 1 },
+        "narrative_significance": { "type": "string", "minLength": 1 }
+      }
+    },
+    "quality_metrics": {
+      "type": "object",
+      "additionalProperties": true,
+      "required": ["word_count", "scene_count", "rendered_dialogue_blocks", "summary_bridge_count", "sensory_first_500", "emotional_turns", "conflict_turns"],
+      "properties": {
+        "word_count": { "type": "integer", "minimum": 1 },
+        "scene_count": { "type": "integer", "minimum": 1 },
+        "rendered_dialogue_blocks": { "type": "integer", "minimum": 0 },
+        "summary_bridge_count": { "type": "integer", "minimum": 0 },
+        "sensory_first_500": {
+          "type": "object",
+          "additionalProperties": { "type": "integer", "minimum": 0 }
+        },
+        "emotional_turns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["from", "to"],
+            "properties": {
+              "from": { "type": "string" },
+              "to": { "type": "string" },
+              "evidence": { "type": "string" }
+            }
+          }
+        },
+        "conflict_turns": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["scene", "irreversible_change"],
+            "properties": {
+              "scene": { "type": "integer", "minimum": 1 },
+              "irreversible_change": { "type": "string" },
+              "evidence": { "type": "string" }
+            }
+          }
+        }
+      }
+    },
+    "state_delta": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["characters", "threads", "world_facts", "continuity_locks"],
+      "properties": {
+        "characters": { "type": "array", "items": { "type": "object" } },
+        "threads": {
+          "type": "array",
+          "items": {
+            "type": "object",
+            "required": ["id", "action"],
+            "properties": {
+              "id": { "type": "string", "minLength": 1 },
+              "action": {
+                "type": "string",
+                "enum": ["planned", "planted", "advanced", "paid_off", "delayed", "reversed", "closed", "retired"]
+              },
+              "reader_obligation": { "type": "string" },
+              "evidence": { "type": "string" },
+              "target_chapter": { "type": "integer", "minimum": 1 }
+            }
+          }
+        },
+        "world_facts": { "type": "array", "items": { "type": "object" } },
+        "continuity_locks": { "type": "array", "items": { "type": "object" } }
+      }
+    },
+    "review": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["p0", "p1", "p2"],
+      "properties": {
+        "p0": { "type": "array" },
+        "p1": { "type": "array" },
+        "p2": { "type": "array" },
+        "soft_notes": { "type": "array" }
+      }
+    }
+  },
+  "allOf": [
+    {
+      "if": {
+        "properties": { "mode": { "const": "production" } }
+      },
+      "then": {
+        "required": ["quality_metrics"]
+      }
+    }
+  ]
+}

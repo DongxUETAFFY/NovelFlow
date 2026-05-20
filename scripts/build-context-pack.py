@@ -3,13 +3,21 @@
 
 The pack includes:
 - context-brief.md
-- market-brief.md when available
+- reader-promise.md, or legacy market-brief.md when available
 - story-state.md when available
 - thread-ledger.md relevant rows when available
 - outline rows for C-1/C/C+1
 - pyramid-compressed summaries
 - previous chapter full text as voice anchor
 - optional review checklist
+
+Modes:
+- free-draft: write only, no state update
+- fragment-continue: continue a user-provided fragment, no state update
+- standard: light chapter delta
+- production: full chapter delta and review
+- finish-book-intake: diagnose an abandoned/incomplete book before continuing
+- finish-book-run: production-locked continuation after confirmed roadmap
 """
 
 from __future__ import annotations
@@ -62,6 +70,15 @@ def infer_next_chapter(context: str) -> Optional[int]:
         if match:
             return int(match.group(1))
     return None
+
+
+def latest_chapter_number(novel_dir: Path) -> Optional[int]:
+    chapters: List[int] = []
+    for path in (novel_dir / "chapters").glob("chapter-*.md"):
+        match = re.match(r"chapter-(\d+)$", path.stem)
+        if match:
+            chapters.append(int(match.group(1)))
+    return max(chapters) if chapters else None
 
 
 def extract_outline_rows(outline: str, chapters: Iterable[int]) -> List[str]:
@@ -144,21 +161,25 @@ def compress_summary(chapter: int, current: int, summary: str) -> Tuple[str, str
     return "tier-5-first-sentence", first_sentence(summary)
 
 
-def build_pack(novel_dir: Path, chapter: Optional[int], include_review: bool) -> str:
+def build_pack(novel_dir: Path, chapter: Optional[int], include_review: bool, mode: str) -> str:
     context_brief = read_text(novel_dir / "context-brief.md")
     if not context_brief:
         raise SystemExit(f"Missing required file: {novel_dir / 'context-brief.md'}")
 
+    latest_chapter = latest_chapter_number(novel_dir)
     current = chapter or infer_next_chapter(context_brief)
+    if current is None and mode == "finish-book-intake":
+        current = (latest_chapter or 0) + 1
     if current is None:
         raise SystemExit("Could not infer next chapter. Pass --chapter N.")
 
     outline = read_text(novel_dir / "outline.md")
-    market_brief = read_text(novel_dir / "market-brief.md")
-    story_state = read_text(novel_dir / "story-state.md")
-    thread_ledger = read_text(novel_dir / "thread-ledger.md")
-    summaries = parse_summaries(read_text(novel_dir / "summaries.md"))
-    previous_chapter = read_text(novel_dir / "chapters" / f"chapter-{current - 1}.md")
+    reader_promise = read_text(novel_dir / "reader-promise.md") or read_text(novel_dir / "market-brief.md")
+    story_state = read_text(novel_dir / "generated" / "story-state.md") or read_text(novel_dir / "story-state.md")
+    thread_ledger = read_text(novel_dir / "generated" / "thread-ledger.md") or read_text(novel_dir / "thread-ledger.md")
+    summaries = parse_summaries(read_text(novel_dir / "generated" / "summaries.md") or read_text(novel_dir / "summaries.md"))
+    voice_anchor_chapter = latest_chapter if mode == "finish-book-intake" and latest_chapter else current - 1
+    previous_chapter = read_text(novel_dir / "chapters" / f"chapter-{voice_anchor_chapter}.md")
     review_checklist = read_text(ROOT / "skills" / "novel-write" / "references" / "review-checklist.md")
 
     outline_rows = extract_outline_rows(outline, [current - 1, current, current + 1])
@@ -171,16 +192,77 @@ def build_pack(novel_dir: Path, chapter: Optional[int], include_review: bool) ->
             continue
         compressed.append(f"### Chapter {chapter_num} ({tier})\n\n{text}")
 
+    if mode == "fragment-continue":
+        workflow_instruction = (
+            "Fragment Continue mode: continue the user-provided fragment as the local voice anchor. "
+            "Do not produce chapter delta, audit output, memory patches, or project state updates. "
+            "Only promote into canon if the user explicitly asks to merge/save it into a chapter."
+        )
+        after_drafting = [
+            "- the continuation text only",
+            "- a brief note that no project state was updated",
+            "- if saving is requested, save as a fragment draft rather than canonical chapter text",
+        ]
+    elif mode == "finish-book-intake":
+        workflow_instruction = (
+            "Finish Book Intake mode: do not write official chapter prose. Diagnose the current book, "
+            "summarize state, infer style, identify open threads, propose continuation directions, "
+            "then ask for roadmap confirmation before any Finish Book Run."
+        )
+        after_drafting = [
+            "- `# Finish Book Intake Report`",
+            "- Current Story State, Character State, Style Profile, Open Threads, Continuity Locks",
+            "- Possible Continuation Directions and Recommended Finish Strategy",
+            "- questions requiring author confirmation",
+        ]
+    elif mode == "finish-book-run":
+        workflow_instruction = (
+            "Finish Book Run mode: proceed only if the intake report and roadmap were confirmed by the author. "
+            "Use Production Lock. Produce full production deltas and stop on P2, unresolved payoff, validation failure, or checkpoint drift."
+        )
+        after_drafting = [
+            "- the chapter text",
+            "- a full `mode: \"production\"` chapter delta JSON",
+            "- progress note for the confirmed finish roadmap",
+        ]
+    elif mode == "free-draft":
+        workflow_instruction = (
+            "Free Draft mode: write the chapter or scene only. Do not produce chapter delta, "
+            "memory patches, audit output, or state updates. Clearly say no project state was updated."
+        )
+        after_drafting = ["- the draft text only", "- a brief note that no project state was updated"]
+    elif mode == "production":
+        workflow_instruction = (
+            "Production Lock mode: after drafting, produce a full production chapter delta with "
+            "quality_metrics, evidence-backed thread actions, P0/P1/P2 review, and any checkpoint risks."
+        )
+        after_drafting = [
+            "- the chapter text",
+            "- a full `mode: \"production\"` chapter delta JSON",
+            "- P0/P1/P2 findings, with P2 requiring author decision",
+        ]
+    else:
+        workflow_instruction = (
+            "Standard Writing mode: write first, then produce a light standard chapter delta. "
+            "Treat sensory density, dialogue ratio, chapter length, and hook density as soft notes."
+        )
+        after_drafting = [
+            "- the chapter text",
+            "- a light `mode: \"standard\"` chapter delta JSON",
+            "- hard-rule issues as P0/P1/P2 and craft concerns as `soft_notes`",
+        ]
+
+    title = "Finish Book Intake" if mode == "finish-book-intake" else f"Chapter {current}"
     parts = [
-        f"# NovelFlow Context Pack: Chapter {current}",
+        f"# NovelFlow Context Pack: {title}",
         "Use this pack with ChatGPT, Claude Chat, or any agent that cannot read local project files directly.",
-        "Follow the novel-write workflow: plan internally, write the chapter, self-review, then produce updated memory file patches.",
+        workflow_instruction,
         "",
         "## 1. Context Brief",
         context_brief.strip(),
         "",
-        "## 2. Market Brief",
-        market_brief.strip() if market_brief else "_Missing market-brief.md. Continue from the Market Snapshot in context-brief.md if present._",
+        "## 2. Reader Promise",
+        reader_promise.strip() if reader_promise else "_Missing reader-promise.md / legacy market-brief.md. Continue from the context snapshot if present._",
         "",
         "## 3. Story State",
         story_state.strip() if story_state else "_Missing story-state.md. Create it before or after this chapter using the NovelFlow template._",
@@ -194,16 +276,12 @@ def build_pack(novel_dir: Path, chapter: Optional[int], include_review: bool) ->
         "## 6. Pyramid-Compressed Previous Summaries",
         "\n\n".join(compressed) if compressed else "_No prior summaries available._",
         "",
-        "## 7. Voice Anchor: Previous Chapter Full Text",
+        "## 7. Voice Anchor: Previous / Latest Chapter Full Text",
         previous_chapter.strip() if previous_chapter else "_No previous chapter full text. This is likely Chapter 1._",
         "",
         "## 8. Writing Task",
-        f"Write Chapter {current}. Preserve all continuity constraints above. After drafting, provide:",
-        "- the chapter text",
-        "- a chapter summary whose first sentence contains named character + concrete event + directional consequence",
-        "- updates needed for story-state.md",
-        "- updates needed for thread-ledger.md",
-        "- updates needed for context-brief.md and progress.md",
+        ("Do not write a formal chapter yet. Produce the diagnostic report below. Provide:" if mode == "finish-book-intake" else f"Write Chapter {current}. Preserve all continuity constraints above. After drafting, provide:"),
+        "\n".join(after_drafting),
     ]
 
     if include_review:
@@ -216,13 +294,19 @@ def main() -> None:
     parser = argparse.ArgumentParser(description="Build a NovelFlow context pack for agents without file tools.")
     parser.add_argument("--novel-dir", default="novel", help="Path to the novel project directory.")
     parser.add_argument("--chapter", default="auto", help="Chapter number, or 'auto' to infer from context-brief.md.")
+    parser.add_argument(
+        "--mode",
+        default="standard",
+        choices=("free-draft", "fragment-continue", "standard", "production", "finish-book-intake", "finish-book-run"),
+        help="Context pack mode.",
+    )
     parser.add_argument("--include-review", action="store_true", help="Include the full review checklist.")
     parser.add_argument("--output", help="Write pack to this file instead of stdout.")
     args = parser.parse_args()
 
     novel_dir = Path(args.novel_dir)
     chapter = None if args.chapter == "auto" else int(args.chapter)
-    pack = build_pack(novel_dir, chapter, args.include_review)
+    pack = build_pack(novel_dir, chapter, args.include_review, args.mode)
 
     if args.output:
         with Path(args.output).open("w", encoding="utf-8", newline="\n") as handle:

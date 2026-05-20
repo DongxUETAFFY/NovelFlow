@@ -12,6 +12,9 @@ Use `skills/novel-setup/SKILL.md` when the user wants to:
 - turn scattered story ideas into a structured project
 
 Use `skills/novel-write/SKILL.md` when the user wants to:
+- free-draft or try a chapter without updating project state
+- continue a user-provided fragment
+- resume or finish an abandoned/incomplete book
 - write or continue a chapter
 - write the next chapter
 - batch-write chapters
@@ -30,6 +33,8 @@ Then follow the Skill instructions exactly. Do not read every project file up fr
 
 For batch, full-auto, review, or checkpoint requests, read `skills/novel-write/references/modes.md` after the mode is detected.
 
+Default writing mode is **Standard Writing**. Use **Free Draft** when the user says "free draft", "试写", "不更新状态", or "跳过记账". Use **Fragment Continue** when the user provides a partial scene and asks "续写这段" / "continue from here". Use **Finish Book Intake** before any request to "续写到完结" / finish an abandoned book; only use **Finish Book Run** after the author confirms the roadmap. Use **Production Lock** for batch, full-auto, checkpoint-sensitive work, Finish Book Run, or strict/stable mode.
+
 ## Project State Contract
 
 Treat files under `novel/` as the source of truth:
@@ -38,7 +43,8 @@ Treat files under `novel/` as the source of truth:
 |------|------|
 | `context-brief.md` | Entry point, compressed state, chapter status |
 | `outline.md` | Chapter plan and milestone constraints |
-| `market-brief.md` | Target reader, core promise, hook, and style contract |
+| `reader-promise.md` | Target reader, core promise, hook, and style contract |
+| `market-brief.md` | Legacy reader-promise file; use only when `reader-promise.md` is missing |
 | `characters.md` | Static character canon |
 | `world.md` | Static world rules, optional |
 | `story-state.md` | Dynamic continuity memory |
@@ -46,17 +52,36 @@ Treat files under `novel/` as the source of truth:
 | `summaries.md` | Chapter summaries for pyramid compression |
 | `progress.md` | Word counts, review notes, revision log |
 | `chapters/` | Draft chapter files |
+| `state/deltas/` | Chapter delta JSON files for Standard/Production modes |
+| `state/chapter-index.json` | Committed chapter index |
+| `generated/` | Rebuildable summaries, progress, story-state, thread-ledger, cards, context packs |
 
-After writing a chapter, update:
+After writing a Free Draft:
+
+- Save only to `novel/drafts/chapter-{N}-free-draft.md` if saving is requested.
+- Do not update project state.
+- Clearly tell the user no project state was updated.
+
+After a Fragment Continue:
+
+- Return continuation text only by default.
+- Save only to `novel/drafts/fragment-continue-{timestamp}.md` or `novel/drafts/chapter-{N}-fragment-continue.md` if saving is requested.
+- Do not update project state or canonical chapter text unless the user explicitly promotes it into a chapter.
+
+For Finish Book:
+
+- Intake first: produce intake report and roadmap; do not write formal chapter prose or update state.
+- Run only after confirmation: use Production Lock with full deltas and checkpoint/stop conditions.
+
+After writing a Standard or Production chapter:
 
 1. `novel/chapters/chapter-{N}.md`
-2. `novel/summaries.md`
-3. `novel/story-state.md`
-4. `novel/thread-ledger.md`
-5. `novel/progress.md`
-6. `novel/context-brief.md`
+2. `novel/state/deltas/chapter-{N}.json`
+3. Validate and commit with `skills/novel-write/scripts/novelflow.py`
+4. Use `novel/generated/*` as the primary rebuildable state
+5. Sync legacy `summaries.md`, `story-state.md`, `thread-ledger.md`, `progress.md`, and `context-brief.md` only when the project expects them
 
-Do not mark a chapter complete until these files are updated.
+Do not mark a Standard or Production chapter complete until its delta is committed.
 
 ## Progressive Loading Rules
 
@@ -66,21 +91,21 @@ Do not mark a chapter complete until these files are updated.
 - Read `references/prose-guide.md` only when drafting prose.
 - Read `references/review-checklist.md` only when reviewing.
 - Read `references/checkpoint-guide.md` only when running a checkpoint/global audit.
-- Read `market-brief.md` as 2-4 bullets, not as a long strategy document.
+- Read `reader-promise.md` as 2-4 bullets. If missing, read legacy `market-brief.md` as reader promise, not as a market strategy document.
 - Read `characters.md` and `world.md` by relevant section, not whole-file by default.
 - If `novel/story-state.md` is missing, create it from `context-brief.md`, `outline.md`, and `progress.md` before writing.
 - If `novel/thread-ledger.md` is missing, create it from `outline.md` and `progress.md` before writing.
 
 ## Skill Testing
 
-Use `skills/novel-write/references/testing-scenarios.md` to test fresh agents. Passing behavior means the agent reads only task-relevant files, updates all required state files, and pauses on P2 or automation guard failures.
+Use `skills/novel-write/references/testing-scenarios.md` to test fresh agents. Passing behavior means the agent respects Free Draft / Standard Writing / Production Lock boundaries, reads only task-relevant files, commits deltas when required, and pauses on P2 or automation guard failures.
 
 ## No File Tools
 
 If the agent cannot read local files directly, generate a context pack first:
 
 ```bash
-python scripts/build-context-pack.py --novel-dir novel --chapter auto --include-review --output context-pack.md
+python scripts/build-context-pack.py --novel-dir novel --chapter auto --mode standard --include-review --output context-pack.md
 ```
 
 Then paste `context-pack.md` into the chat model.

@@ -1,388 +1,206 @@
 # NovelFlow
 
-NovelFlow is a Claude Code Skill project for writing long-form fiction with AI without losing plot, character, and world continuity. It is designed around one constraint: **the full novel will never fit in the model context window**.
+NovelFlow 是一套面向长篇小说写作的 Codex / Claude Code Skill。它的目标不是让模型“记住整本书”，而是把小说拆成可读取、可验证、可重建的项目文件，让 AI 在有限上下文里也能稳定推进长篇创作。
 
-Instead of asking the model to "remember everything", NovelFlow turns a novel into a file-backed memory system. The model reads only the state it needs for the current task, writes one chapter or batch at a time, reviews the output, then updates the persistent memory files before continuing.
+它适合这些场景：
 
-The project is packaged as Claude Code Skills, but the core design is plain Markdown plus file I/O. Any agent that can read and write files can implement the same workflow.
+- 从零搭建一本长篇小说的设定、人物、大纲和项目文件。
+- 按章节续写，并持续维护人物状态、伏笔、摘要和进度。
+- 试写片段、自由草稿，暂时不进入正式项目记账。
+- 批量写作、全自动推进，或用更严格的生产锁定模式保障长篇稳定性。
+- 接手一本已经中断的旧书，先做诊断和续写路线图，再继续写到完结。
 
-## Design Goals
+## 核心思路
 
-| Goal | Design Response |
-|------|-----------------|
-| Prevent forgetting across 50-100 chapters | Store outline, character state, summaries, and continuity locks in files, not chat memory |
-| Avoid context window overflow | Load skill references and project files progressively, only when needed |
-| Keep prose style continuous | Include the previous chapter full text as a voice anchor |
-| Preserve long-range plot memory | Use pyramid compression: near chapters detailed, distant chapters one-line |
-| Preserve reader promise and style | Keep a short `market-brief.md` instead of loading a large market document |
-| Stop late-novel quality decay | Run structural health checks from chapter 30 onward |
-| Protect emotional milestones | Mark milestone chapters in the outline and force extra scene development |
-| Support cross-session work | Resume from `novel/context-brief.md` and `novel/story-state.md` |
+长篇小说最大的难点不是“写一章”，而是几十章之后仍然不忘：
 
-## Architecture Overview
+- 谁知道了什么。
+- 哪些伏笔还没回收。
+- 人物关系现在处在什么温度。
+- 情绪和节奏是否还在升级。
+- 当前章节该服务哪一个长期承诺。
 
-NovelFlow has two Skills and one project workspace:
+NovelFlow 用文件系统承担长期记忆，用 Skill 工作流约束 AI 的读取、写作、审查和更新过程。
+
+## 项目结构
 
 ```text
 skills/
-  novel-setup/      # Turns raw ideas into structured project files
-  novel-write/      # Writes, reviews, and updates chapters
+  novel-setup/      # 从想法生成小说项目
+  novel-write/      # 写作、续写、审查、checkpoint
 
 novel/
-  context-brief.md  # Compressed entry point and chapter status
-  outline.md        # Full chapter plan with milestone markers
-  market-brief.md   # Target reader, genre promise, hook, style contract
-  characters.md     # Static character bible
-  world.md          # Static world rules, optional
-  story-state.md    # Dynamic long-form memory
-  thread-ledger.md  # Foreshadowing and payoff ledger
-  summaries.md      # Chapter summaries for pyramid compression
-  progress.md       # Word counts, review notes, revision log
-  chapters/         # Generated chapter files
+  context-brief.md  # 每次写作优先读取的压缩入口
+  outline.md        # 章节大纲、结构节点、里程碑
+  reader-promise.md # 读者承诺、类型钩子、文风契约
+  market-brief.md   # 旧名称，兼容为 reader-promise
+  characters.md     # 静态人物设定
+  world.md          # 静态世界观规则，可选
+  story-state.md    # 动态剧情状态
+  thread-ledger.md  # 伏笔、谜团、回收账本
+  summaries.md      # 章节摘要，用于金字塔压缩
+  progress.md       # 字数、审查、修订记录
+  chapters/         # 正文章节
+  state/
+    deltas/         # 每章结构化 delta
+    chapter-index.json
+  generated/        # 可重建的派生状态和上下文包
 ```
 
-The key design choice is separation between **static canon**, **dynamic state**, and **compressed history**.
+## 两个 Skill
 
-| Layer | File | Purpose |
-|-------|------|---------|
-| Entry state | `context-brief.md` | Small file read first every session: premise, compressed character cards, progress, next chapter, state snapshot |
-| Reader contract | `market-brief.md` | Short target-reader, hook, core promise, and style contract used as a writing guardrail |
-| Static plan | `outline.md` | Chapter-by-chapter plan, act structure, turning points, milestone column |
-| Static canon | `characters.md`, `world.md` | Full character and world rules that should not be loaded unless relevant |
-| Dynamic state | `story-state.md` | Current wants, hidden pressures, relationship temperature, open threads, continuity locks |
-| Thread lifecycle | `thread-ledger.md` | Foreshadowing, mysteries, red herrings, promises, payoff target, payoff form, status |
-| Compressed history | `summaries.md` | Full summaries that are compressed at read time by distance |
-| Operational log | `progress.md` | Word counts, review notes, revision log, statistics |
+### novel-setup
 
-## Why Two Skills
+用于开新书。它会从零散想法开始，帮助作者确认类型、主角、冲突、世界观、篇幅和章节结构，然后生成 `novel/` 项目文件。
 
-### `novel-setup`
+它的原则是：核心创意必须来自作者，不让 AI 擅自替作者确定不可逆的主设定。
 
-`novel-setup` runs before drafting. It transforms vague ideas into a durable project structure.
+### novel-write
 
-Workflow:
+用于正式写作、续写、片段试写、审查和长篇维护。它默认不依赖聊天历史，而是从 `novel/context-brief.md` 和相关项目文件恢复状态。
 
-1. Detect whether a `novel/` project already exists.
-2. Capture only user-provided ideas. It must not invent core creative facts without confirmation.
-3. Ask a batched discovery questionnaire covering genre, POV, protagonist, antagonist, plot, world, and scope.
-4. Synthesize a working summary and wait for user confirmation.
-5. Generate the project files from templates.
-6. Validate chapter count, milestone values, character coverage, `market-brief.md`, `context-brief.md` size, `story-state.md`, and `thread-ledger.md`.
-7. Hand off to `novel-write`.
+## 写作模式
 
-The setup Skill exists because long novels fail early if the model starts drafting before structure exists. The plan must become files before chapter generation begins.
+| 模式 | 适用触发 | 行为 |
+|------|----------|------|
+| 自由草稿 | `free draft`、`试写`、`不更新状态` | 只写草稿，不更新项目状态 |
+| 片段续写 | `续写这段`、`接着这段写`、`continue this fragment` | 接着用户给出的片段写，不自动并入正文 |
+| 标准写作 | `继续`、`下一章`、`写第 N 章` | 写一章，生成轻量 delta，更新必要状态 |
+| 生产锁定 | `production lock`、`严格模式` | 完整 delta、审查、状态重建和硬性校验 |
+| 批量写作 | `batch 5`、`连续写 3 章` | 默认使用生产锁定 |
+| 全自动 | `write all`、`一口气写完` | 会先提醒质量风险，再按安全门推进 |
+| 断书接诊 | `续写到完结`、`这本书断了，帮我续完` | 先诊断旧书，输出续写路线图，不直接开写 |
+| 完结续写 | 作者确认路线图后 | 用生产锁定从当前进度写到结尾 |
+| 审查 | `review chapter N`、`审阅第 N 章` | 审查已有章节并给出修改建议 |
+| Checkpoint | `十章检查`、`checkpoint` | 全局一致性、节奏、伏笔和回收健康检查 |
 
-### `novel-write`
+默认模式是 **标准写作**。它比早期版本轻，不会让作者每次都背着大量表格写作；但仍然保留必要的项目状态更新。
 
-`novel-write` runs during drafting and review. It never relies on chat history as the source of truth.
+## 三档约束
 
-Modes:
+NovelFlow 现在把“创作自由”和“长篇稳定性”拆成三档：
 
-| Mode | Trigger | Behavior |
-|------|---------|----------|
-| Interactive | `start`, `continue`, `next chapter` | Write one chapter, review, update files, pause |
-| Batch | `batch 5`, `write 3 chapters` | Write N chapters, review each, pause after the batch |
-| Full-auto | `write all`, `一口气写完` | Write all remaining chapters with safety gates |
-| Review | `review chapter N` | Audit an existing chapter and offer fixes |
-| Checkpoint | `checkpoint`, `十章检查` | Audit global consistency, pacing, and payoff health without rewriting |
+1. **自由草稿**
+   只读最少上下文，优先写得顺。不跑完整审查，不更新项目状态。
 
-The default is interactive mode because author feedback is the strongest quality control loop.
+2. **标准写作**
+   正常写作入口。先写章节，再整理 delta 和状态更新。审查输出保持简洁，只拦截硬错误。
 
-## Progressive Loading Design
+3. **生产锁定**
+   用于批量、全自动、长篇后期、断书续写到完结。完整校验 delta、伏笔账本、checkpoint 和派生状态。
 
-NovelFlow follows the Skill progressive disclosure pattern:
+硬规则包括：不能改写核心人设事实、不能丢已承诺伏笔、正式章节不能跳过状态更新。
 
-| Level | Loaded When | Content |
-|-------|-------------|---------|
-| L1 | Skill discovery | `name` and `description` only |
-| L2 | Skill invoked | `SKILL.md` procedural workflow |
-| L3 | Specific step | References such as compression guide, prose guide, review checklist, templates |
-| Project entry | Every writing session | `novel/context-brief.md` |
-| Project detail | Only if needed | Relevant rows/sections from outline, characters, world, story-state, summaries |
-| Mode details | Only after trigger | `references/modes.md` for batch, full-auto, review, checkpoint |
-| Diagnostic modules | Only on demand | Scene blueprint for current-chapter planning, checkpoint guide for 10-chapter audits |
+软建议包括：感官密度、对白比例、章节长度、hook 密度、场景数量。这些会作为写作建议，不会每次都当作红线。
 
-This prevents two common failures:
+## 片段续写
 
-1. Loading every rule, template, and previous chapter into context before the model knows what task it is doing.
-2. Hiding important rules in huge documents the model never reads.
+片段续写是创作模式，不是项目推进模式。
 
-`SKILL.md` files stay procedural. Detailed material lives in `references/` and templates. The agent reads them at the exact step where they matter.
+当用户提供一段正文并说“续写这段”时，agent 会：
 
-## Skill Evaluation
+- 把用户片段当作局部文风和情绪锚点。
+- 只读取必要上下文。
+- 直接续写正文。
+- 不更新 `chapter-delta`、`story-state`、`thread-ledger`、`context-brief`。
+- 不把结果自动标记为正式章节。
 
-NovelFlow includes pressure scenarios in `skills/novel-write/references/testing-scenarios.md`. Use them with a fresh agent to verify that the Skill routes correctly, does not load the whole project up front, updates all required state files, and pauses on P2 or automation guard failures.
+如果作者明确说“并入正文”或“保存到第 N 章”，才会切换到标准写作流程。
 
-## Chapter Context Assembly
+## 断书续写到完结
 
-When writing Chapter C, NovelFlow assembles context in a fixed order:
+“续写到完结”不是简单的 `continue`。NovelFlow 会分两步：
+
+1. **Finish Book Intake / 断书接诊**
+   读取现有项目状态，整理当前剧情、人物状态、文风、开放伏笔、风险点和可行续写方向，输出路线图。
+
+2. **Finish Book Run / 完结续写**
+   只有作者确认路线图后才开始。该模式固定使用生产锁定，逐章写作、审查、提交 delta，并在关键节点 checkpoint。
+
+这样做是为了避免旧书被 AI 直接接管后方向漂移。
+
+## 上下文装配
+
+写第 C 章时，NovelFlow 会按距离装配上下文：
+
+| 来源 | 装配方式 | 目的 |
+|------|----------|------|
+| 第 C-1 章 | 全文 | 文风、语气、即时连续性 |
+| 最近 2 章 | 完整摘要 | 近期剧情连续性 |
+| 中距离章节 | 摘要前 50-100 字 | 保留关键事件 |
+| 远距离章节 | 一句话摘要 | 长期记忆 |
+| 当前大纲行 | 完整读取 | 明确本章目标 |
+| 动态状态 | 相关条目 | 人物、关系、伏笔、世界规则 |
+
+远章摘要的第一句话非常重要，必须包含：
 
 ```text
-1. Foundation
-   - premise
-   - genre / POV
-   - target reader / core promise / style contract
-   - compressed character cards
-
-2. Dynamic state
-   - current narrative pressure
-   - relevant character state rows
-   - active open threads
-   - relationship shifts
-   - continuity locks
-
-3. Thread ledger
-   - threads planted in C
-   - threads due in C/C+1
-   - high-risk forgotten threads
-   - planned payoff form
-
-4. Immediate outline context
-   - chapter C-1 row
-   - chapter C row
-   - chapter C+1 row
-
-5. Pyramid summaries
-   - distant chapters: one sentence
-   - mid-distance chapters: first 50-100 words
-   - recent chapters: full summaries
-
-6. Voice anchor
-   - full text of chapter C-1
-
-7. Current writing instruction
-   - chapter title, target events, milestone constraints
-   - silently generated 3-6 beat scene blueprint
+具名人物 + 具体事件 + 对后续造成的方向性后果
 ```
 
-This gives the model three kinds of memory:
+## 文件状态与 delta
 
-| Memory Type | Mechanism |
-|-------------|-----------|
-| What the story is | `context-brief.md`, `outline.md` |
-| What is currently unstable | `story-state.md` |
-| What reader promise to preserve | `market-brief.md` |
-| What must pay off later | `thread-ledger.md` |
-| What already happened | `summaries.md` + previous chapter full text |
+正式章节写完后，NovelFlow 会生成或更新：
 
-## Pyramid Context Compression
+- `novel/chapters/chapter-{N}.md`
+- `novel/state/deltas/chapter-{N}.json`
+- `novel/state/chapter-index.json`
+- `novel/generated/` 下的派生状态
+- legacy Markdown 状态文件，用于兼容旧工作流
 
-Long-form fiction cannot keep every previous chapter in context. NovelFlow compresses previous chapters by distance from the current chapter.
+长期方向是让 `chapter-delta`、`chapter-index` 和 `generated/` 成为主路线，legacy Markdown 文件作为兼容层或导出层。
 
-Example when writing Chapter 20:
+## 无文件工具场景
 
-| Source | Included As | Reason |
-|--------|-------------|--------|
-| Chapter 19 | Full text | Voice, rhythm, immediate continuity |
-| Chapters 17-18 | Full summaries | Recent plot continuity |
-| Chapters 14-16 | First 100 words of summary | Important recent history |
-| Chapters 10-13 | First 50 words of summary | Major beats |
-| Chapters 1-9 | First sentence only | Long-range memory |
-
-The first sentence of every chapter summary is load-bearing. When Chapter 3 is seventy chapters old, its first sentence may be all the model sees. For that reason, summaries must start with:
-
-```text
-named character + concrete event + directional consequence
-```
-
-Bad:
-
-```text
-The investigation continues and tensions rise.
-```
-
-Good:
-
-```text
-Kira identifies the mole as her own partner, forcing her to choose between the case and her cover.
-```
-
-For Chinese projects:
-
-```text
-林夜在审讯室折断嫌犯手臂，导致沈鸢确认他的失控已从异界蔓延到现实。
-```
-
-The repository includes `scripts/validate-summaries.sh` to check this heuristic for English and Chinese summaries.
-
-## Dynamic State: `story-state.md`
-
-`story-state.md` is the main addition that makes NovelFlow suitable for long novels rather than just long prompts.
-
-It stores information that changes as chapters are drafted:
-
-| Section | Purpose |
-|---------|---------|
-| Current Narrative Pressure | What unresolved pressure must shape the next chapter |
-| Character State | Last seen, current want, hidden pressure, relationship temperature, arc position |
-| Open Threads | Promises, mysteries, planted objects, relationship tensions, future payoffs |
-| World Facts Established In Draft | Rules introduced in prose that constrain future scenes |
-| Continuity Locks | Short facts that must never drift |
-| Recent Relationship Shifts | Meaningful changes in trust, intimacy, hostility, distance |
-
-This file prevents a subtle long-novel failure: the model may remember static character traits but forget where the character currently is emotionally. `characters.md` says who the character is. `story-state.md` says where the character is now.
-
-After every chapter, `novel-write` updates `story-state.md` before updating `context-brief.md`. The `context-brief.md` state snapshot then carries only the 3-6 most important points into the next session.
-
-## Foreshadowing Ledger: `thread-ledger.md`
-
-`thread-ledger.md` is a dedicated lifecycle table for foreshadowing and payoff. It exists because open threads in `story-state.md` are not enough for mystery, horror, political, or long romance structures where planted details need explicit payoff timing.
-
-Each significant thread gets a stable ID and a status:
-
-```text
-planned -> planted -> advanced -> paid-off
-```
-
-or, for false leads:
-
-```text
-planned -> planted -> closed-red-herring
-```
-
-The ledger tracks:
-
-| Field | Purpose |
-|-------|---------|
-| ID | Stable reference like `T01` |
-| Thread | What promise, mystery, object, or emotional setup exists |
-| Type | mystery, object, relationship, prophecy, red-herring, consequence |
-| Planted In | Chapter where it appears or should appear |
-| Evidence In Text | Concrete prose evidence after drafting |
-| Current State | What readers currently understand |
-| Payoff Target | Intended chapter or range |
-| Payoff Form | reveal, reversal, emotional-payoff, object-use, consequence, red-herring-close |
-| Status | planned, planted, advanced, paid-off, closed-red-herring, dropped |
-
-When writing a chapter, the agent reads only ledger rows that are planted in the current chapter, due now or next chapter, mentioned by the current outline row, or high-risk if forgotten. This keeps payoff tracking active without loading the entire ledger every time.
-
-## Per-Chapter Write Loop
-
-Interactive mode runs this loop:
-
-```text
-Step 0: Restore state from context-brief.md
-Step 1: Assemble context from story-state, outline, summaries, previous chapter
-Step 2: Detect milestone constraints
-Step 3: Plan internally with a current-chapter scene blueprint
-Step 4: Write the chapter
-Step 5: Review with P0/P1/P2 severity and one focused P1 pass
-Step 6: Update chapter file, summaries, story-state, thread-ledger, progress, context-brief
-Step 7: Pause for author feedback
-```
-
-The loop is intentionally stateful. A chapter is not complete when text is generated. It is complete only after the memory files are updated.
-
-## Lightweight MVP Additions
-
-NovelFlow intentionally avoids heavyweight features like full-book scene databases or mandatory multi-agent pipelines. The MVP adds only four bounded modules:
-
-| Module | How It Stays Lightweight |
-|--------|---------------------------|
-| Market brief | One short file under 1500 characters; writing reads only 2-4 bullets |
-| Scene blueprint | Generated silently for the current chapter only; not persisted by default |
-| One-pass revision | P0 fixes plus one P1 pass; unresolved creative problems become P2 |
-| 10-chapter checkpoint | Diagnostic report only; reads summaries and ledgers before chapter files |
-
-## Quality Gates
-
-NovelFlow uses defense in depth instead of trusting one prompt instruction.
-
-| Gate | What It Catches |
-|------|-----------------|
-| P0/P1/P2 review | Typos, minor drift, major contradictions |
-| Milestone protection | Underwritten climax, death, reunion, revelation, act break |
-| Structural health checks | Late-novel outline-ification, low scene density, weak sensory detail |
-| Full-auto caps | Quality collapse from writing too many chapters in one session |
-| Summary first-sentence rule | Distant memory becoming vague |
-| `story-state.md` checks | Forgotten open threads, relationship drift, continuity lock violations |
-| `thread-ledger.md` checks | Missed payoff, dropped red herrings, untracked planted clues |
-| 10-chapter checkpoint | Global drift before it becomes expensive to repair |
-
-Severity levels:
-
-| Severity | Action |
-|----------|--------|
-| P0 | Fix immediately without asking |
-| P1 | Fix and record in progress notes |
-| P2 | Pause and ask the author |
-
-## Full-Auto Safety
-
-Full-auto mode is intentionally constrained.
-
-| Condition | Action |
-|-----------|--------|
-| More than 30 chapters remaining | Refuse full-auto and suggest batch mode |
-| 15-30 chapters remaining | Warn and ask for confirmation |
-| Any P2 issue | Pause immediately |
-| 3+ P1 issues in one chapter | Pause |
-| 2 consecutive structural decay warnings | Pause |
-| Milestone chapter shorter than average | Pause |
-
-This is not a throughput tool. It is a controlled drafting system.
-
-## Installation
+如果 agent 不能直接读取本地文件，可以先生成上下文包：
 
 ```bash
-git clone https://github.com/DongxUETAFFY/NovelFlow.git
-mkdir -p ~/.claude/skills
-cp -r NovelFlow/skills/* ~/.claude/skills/
+python scripts/build-context-pack.py --novel-dir novel --chapter auto --mode standard --include-review --output context-pack.md
 ```
 
-Restart Claude Code.
+支持的 `--mode` 包括：
 
-## Scripts
+- `free-draft`
+- `fragment-continue`
+- `standard`
+- `production`
+- `finish-book-intake`
+- `finish-book-run`
 
-```bash
-scripts/sync-skills.sh --local
-scripts/sync-skills.sh --check
-scripts/validate-summaries.sh novel/summaries.md novel/characters.md
-```
+然后把 `context-pack.md` 粘贴给模型。
 
-| Script | Purpose |
-|--------|---------|
-| `sync-skills.sh` | Sync tracked `skills/` into local `.claude/skills/` or installed `~/.claude/skills/` |
-| `validate-summaries.sh` | Check whether chapter summary first sentences are strong enough for pyramid memory |
+## 安装与使用
 
-## Using With Other Agents
+把 `skills/` 目录放到支持 Skills 的 agent 环境中即可。对于不能自动发现 Skills、但能读仓库文件的 agent，可以从 [AGENTS.md](AGENTS.md) 开始读取路由说明。
 
-NovelFlow is not locked to Claude Code.
-
-For Codex, Cursor, OpenCode, or any file-capable agent, use the repository entry file:
+推荐入口：
 
 ```text
-AGENTS.md
+skills/novel-setup/SKILL.md
+skills/novel-write/SKILL.md
 ```
 
-That file explains which Skill to load, which project files are source of truth, and how to update state after each chapter.
+## 测试
 
-For a custom agent:
-
-1. Load the relevant `SKILL.md` as procedural instruction.
-2. Start every writing session by reading `novel/context-brief.md`.
-3. Read references only when the Skill says to; for non-interactive modes, read `references/modes.md` after mode detection.
-4. Update `summaries.md`, `story-state.md`, `thread-ledger.md`, `progress.md`, and `context-brief.md` after every chapter.
-
-For ChatGPT or Claude Chat without file tools, build a single context pack:
+运行写作 skill 的脚本测试：
 
 ```bash
-python scripts/build-context-pack.py --novel-dir novel --chapter auto --include-review --output context-pack.md
+python -B -m unittest discover -s skills/novel-write/scripts -p "test_*.py"
 ```
 
-Then paste `context-pack.md` into the chat. The pack contains:
+用于人工评估的场景在：
 
-1. `context-brief.md`
-2. `market-brief.md`
-3. relevant `story-state.md` sections
-4. relevant `thread-ledger.md` rows
-5. current outline row
-6. previous chapter full text
-7. pyramid-compressed summaries
-8. review checklist if needed
+```text
+skills/novel-write/references/testing-scenarios.md
+```
 
-## License
+## 设计取舍
 
-MIT
+NovelFlow 不是要把作者变成流程管理员。它的目标是：
 
-[中文文档](README_CN.md)
+- 平时写作尽量轻。
+- 想试写时可以跳过记账。
+- 真正进入长篇稳定推进时，有足够硬的结构保护。
+- 让 AI 先写得像小说，再把必要状态整理成可复用的项目记忆。
+
+也就是说，它既保留“写作的手感”，也给长篇连载留下能走远的轨道。

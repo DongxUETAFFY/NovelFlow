@@ -11,3 +11,18 @@ Thumbs.db
 # Environment
 .env
 .env.local
+
+# Python caches and local test artifacts
+__pycache__/
+*.py[cod]
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Local generated packs and temporary output
+context-pack.md
+*.tmp
+*.temp
+*.log
